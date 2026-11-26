@@ -1275,4 +1275,58 @@ class HomePageTest extends TestCase
     }
 
 
+    public function test_refunded_order_cannot_start_another_payment_attempt(): void
+    {
+        $order = Order::create([
+            'order_number' => 'CS-REFUNDED-RETRY-01',
+            'customer_name' => 'مشتری بازپرداخت',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'refunded',
+            'payment_status' => 'refunded',
+        ]);
+
+        $this->post(route('orders.pay.retry', $order), [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'payment_status' => 'refunded',
+            'payment_authority' => null,
+        ]);
+    }
+
+    public function test_paid_stock_issue_order_cannot_start_another_payment_attempt(): void
+    {
+        $order = Order::create([
+            'order_number' => 'CS-STOCK-ISSUE-RETRY-01',
+            'customer_name' => 'مشتری بررسی موجودی',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'paid_stock_issue',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->post(route('orders.pay.retry', $order), [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'paid_stock_issue',
+            'payment_status' => 'paid',
+            'payment_authority' => null,
+        ]);
+    }
+
+
 }
