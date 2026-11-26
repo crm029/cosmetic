@@ -68,6 +68,8 @@
             <a href="{{ route('shop') }}">فروشگاه</a>
             <a href="{{ route('about') }}">درباره ما</a>
             <a href="{{ route('faq') }}">پرسش‌های متداول</a>
+            <a href="{{ route('terms') }}">قوانین خرید</a>
+            <a href="{{ route('privacy') }}">حریم خصوصی</a>
             <a href="{{ route('orders.track') }}">پیگیری سفارش</a>
         </div>
         <div>
