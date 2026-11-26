@@ -39,6 +39,8 @@ jobs:
         run: "DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan migrate:fresh --seed"
       - name: Lint PHP source
         run: "find app routes database -name '*.php' -print0 | xargs -0 -n1 php -l"
+      - name: Check JavaScript syntax
+        run: node --input-type=module --check < public/assets/js/store.js
       - name: Compile all Blade views
         run: php artisan view:cache
       - name: Run feature tests
