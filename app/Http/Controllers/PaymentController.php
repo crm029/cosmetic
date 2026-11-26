@@ -14,22 +14,23 @@ class PaymentController extends Controller {
   if(strtoupper($status)!=='OK')return redirect()->route('home')->withErrors(['payment'=>'پرداخت توسط کاربر لغو شد یا ناموفق بود.']);
   try {
    $verifiedData=null;
-   if($order->payment_status!=='paid') {
+   if(!in_array($order->payment_status,['paid','refunded'],true)) {
     $verifiedData=$gateway->verify($order);
     if($verifiedData===null)return redirect()->route('home')->withErrors(['payment'=>'تأیید پرداخت از سوی درگاه انجام نشد.']);
    }
    $settlement=DB::transaction(function()use($order,$verifiedData){
     $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
-    if($locked->payment_status!=='paid') {
+    if(!in_array($locked->payment_status,['paid','refunded'],true)) {
      $changes=['payment_status'=>'paid','payment_ref_id'=>(string)($verifiedData['ref_id']??'')];
      if($locked->status==='cancelled')$changes['status']='refund_required';
      elseif($locked->status==='pending')$changes['status']='processing';
      $locked->update($changes);
     }
     $locked->refresh();
-    return ['status'=>$locked->status,'paid'=>$locked->payment_status==='paid'];
+    return ['status'=>$locked->status,'paid'=>in_array($locked->payment_status,['paid','refunded'],true),'payment_status'=>$locked->payment_status];
    });
    if(!$settlement['paid'])return redirect()->route('home')->withErrors(['payment'=>'وضعیت پرداخت نیازمند بررسی پشتیبانی است.']);
+   if($settlement['payment_status']==='refunded')return redirect()->route('home')->with('success','این سفارش قبلاً بازپرداخت شده است.');
    if($settlement['status']==='refund_required')return redirect()->route('home')->withErrors(['payment'=>'پرداخت موفق ثبت شد؛ اما سفارش قبلاً لغو شده بود. بازپرداخت وجه نیازمند بررسی پشتیبانی است.']);
    if(!$fulfillment->deductStock($order->fresh()))return redirect()->route('home')->withErrors(['payment'=>'پرداخت موفق بود، اما موجودی نیاز به بررسی دستی دارد. با پشتیبانی فروشگاه تماس بگیرید.']);
    $sms->sendOrderPaidOnce($order->fresh());
