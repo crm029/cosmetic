@@ -25,7 +25,7 @@ class AdminController extends Controller {
   if(empty($data['slug']))$data['slug']=$product->slug;
   $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
- public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);$product->delete();return back()->with('success','محصول حذف شد.'); }
+ public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$product->delete();return back()->with('success','محصول حذف شد.'); }
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
  public function storeCategory(Request $request) {
