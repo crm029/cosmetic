@@ -30,15 +30,17 @@ class AdminController extends Controller {
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
  public function storeCategory(Request $request) {
-  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/','unique:categories,slug'],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'is_active'=>['nullable','boolean']]);
+  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/','unique:categories,slug'],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
+  if($request->hasFile('image'))$data['image']=$request->file('image')->store('categories','public');
   $data['is_active']=$request->boolean('is_active');Category::create($data);return redirect()->route('admin.categories')->with('success','دسته‌بندی ثبت شد.');
  }
  public function editCategory(Category $category): View { return view('admin.categories.form',compact('category')); }
  public function updateCategory(Request $request,Category $category) {
-  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/',Rule::unique('categories','slug')->ignore($category->id)],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'is_active'=>['nullable','boolean']]);
+  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/',Rule::unique('categories','slug')->ignore($category->id)],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
+  if($request->hasFile('image')){if($category->image)Storage::disk('public')->delete($category->image);$data['image']=$request->file('image')->store('categories','public');}
   $data['is_active']=$request->boolean('is_active');$category->update($data);return redirect()->route('admin.categories')->with('success','دسته‌بندی ویرایش شد.');
  }
- public function deleteCategory(Category $category) { $category->delete();return back()->with('success','دسته‌بندی حذف شد.'); }
+ public function deleteCategory(Category $category) { if($category->image)Storage::disk('public')->delete($category->image);$category->delete();return back()->with('success','دسته‌بندی حذف شد.'); }
  public function orders(): View { return view('admin.orders.index',['orders'=>Order::latest()->paginate(25)]); }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function updateOrderStatus(Request $request,Order $order) {
