@@ -1,12 +1,12 @@
 <?php
-namespace App\\Http\\Controllers;
-use App\\Models\\Category;
-use App\\Models\\Order;
-use App\\Models\\Product;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Storage;
-use Illuminate\\Support\\Str;
-use Illuminate\\View\\View;
+namespace App\Http\Controllers;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 class AdminController extends Controller {
  public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orders'=>Order::latest()->take(8)->get()]); }
  public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
