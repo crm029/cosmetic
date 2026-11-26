@@ -325,4 +325,10 @@ class HomePageTest extends TestCase
             ->assertSee('112,000');
     }
 
+    public function test_filtered_catalog_is_noindex_but_base_catalog_is_indexable(): void
+    {
+        $this->get('/shop')->assertOk()->assertSee('content="index,follow"', false);
+        $this->get('/shop?q=serum')->assertOk()->assertSee('content="noindex,nofollow"', false);
+    }
+
 }
