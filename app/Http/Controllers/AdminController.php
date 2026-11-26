@@ -69,7 +69,7 @@ class AdminController extends Controller {
   return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
  public function updateOrderStatus(Request $request,Order $order) {
-  $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled']]);
+  $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled'],'shipping_carrier'=>['nullable','string','max:100'],'tracking_code'=>['nullable','string','max:120']]);
   $error=DB::transaction(function()use($order,$data){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
    if($locked->status==='cancelled'&&$data['status']!=='cancelled')return 'سفارش لغوشده قابل فعال‌سازی مجدد نیست.';
@@ -77,7 +77,7 @@ class AdminController extends Controller {
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
    $rank=['pending'=>0,'processing'=>1,'shipped'=>2,'delivered'=>3];
    if(isset($rank[$locked->status],$rank[$data['status']])&&$rank[$data['status']]<$rank[$locked->status])return 'وضعیت سفارش امکان بازگشت به مرحله قبلی را ندارد.';
-   $locked->update(['status'=>$data['status']]);return null;
+   $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];$locked->update($changes);return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
