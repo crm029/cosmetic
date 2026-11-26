@@ -1,6 +1,6 @@
 <?php
-use App\\Models\\User;
-use Illuminate\\Support\\Facades\\Artisan;
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 Artisan::command('store:about',function(){ $this->comment('Cosmetic Store - Laravel storefront'); })->purpose('Display store project information');
 Artisan::command('store:make-admin',function(){
  $name=$this->ask('نام مدیر');$mobile=$this->ask('شماره موبایل مدیر');
