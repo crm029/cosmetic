@@ -35,3 +35,5 @@
 .admin-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px;padding:15px;background:#eee6dc}.admin-filter input,.admin-filter select{min-width:150px;flex:1;padding:10px;border:1px solid var(--line);background:white;font:11px "Vazirmatn"}.admin-filter .button{padding:10px 15px}.admin-filter .text-link{font-size:10px}
 
 .shipment-tracking{margin:22px 0;padding:18px;background:#eee6dc;border-right:2px solid var(--clay)}.shipment-tracking h3{font-size:14px;font-weight:500}.shipment-tracking p{font-size:11px;line-height:1.9}.shipment-tracking strong{color:var(--ink);letter-spacing:.04em}
+
+.retry-payment-form{margin:18px 0}.retry-payment-form .button{min-width:220px;justify-content:center}
