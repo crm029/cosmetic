@@ -19,6 +19,36 @@ class HomePageTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_order_paid_sms_is_claimed_and_sent_only_once(): void
+    {
+        config([
+            'services.0098sms.base_url' => 'https://sms.example.test/send',
+            'services.0098sms.username' => 'test-user',
+            'services.0098sms.password' => 'test-password',
+            'services.0098sms.sender' => '1000',
+        ]);
+        Http::fake(['sms.example.test/*' => Http::response('1', 200)]);
+        $order = Order::create([
+            'order_number' => 'CS-SMS-ONCE-01',
+            'customer_name' => 'مشتری پیامک',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+
+        $sms = app(SmsService::class);
+        $this->assertTrue($sms->sendOrderPaidOnce($order));
+        $this->assertFalse($sms->sendOrderPaidOnce($order->fresh()));
+
+        Http::assertSentCount(1);
+        $this->assertNotNull($order->fresh()->sms_sent_at);
+        $this->assertNull($order->fresh()->sms_claimed_at);
+    }
+
     public function test_homepage_returns_successful_response(): void
     {
         $this->get('/')->assertOk()->assertSee('زیبایی');
