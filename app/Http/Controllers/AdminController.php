@@ -88,7 +88,7 @@ class AdminController extends Controller {
    'slug'=>['nullable','string','max:190','regex:/^[a-z0-9-]+$/',Rule::unique('products','slug')->ignore($product?->id)],
    'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
-   'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0'],
+   'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0','gt:price'],
    'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'model_3d'=>['nullable','file','mimes:glb','max:20480'],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
    'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
