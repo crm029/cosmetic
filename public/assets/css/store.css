@@ -37,3 +37,5 @@
 .shipment-tracking{margin:22px 0;padding:18px;background:#eee6dc;border-right:2px solid var(--clay)}.shipment-tracking h3{font-size:14px;font-weight:500}.shipment-tracking p{font-size:11px;line-height:1.9}.shipment-tracking strong{color:var(--ink);letter-spacing:.04em}
 
 .retry-payment-form{margin:18px 0}.retry-payment-form .button{min-width:220px;justify-content:center}
+
+.product-price-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.product-price-line del,.product-detail-price del{font-size:10px;color:var(--muted);font-weight:400}.product-price-line strong{font-weight:500}.sale-badge{display:inline-block;padding:3px 7px;background:#e7d5c9;color:#765442;font-size:9px;font-weight:500}.stock-badge{display:inline-block;color:#9b5b4e;font-size:9px}.product-detail-price{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.product-detail-price .detail-price{display:block}
