@@ -55,4 +55,29 @@
         <div class="detail-description">{!! nl2br(e($product->description)) !!}</div>
     </div>
 </section>
+
+@if($relatedProducts->isNotEmpty())
+<section class="section-block related-products">
+    <div class="section-heading">
+        <div><span class="eyebrow">YOU MAY ALSO LIKE</span><h2>شاید این‌ها را هم دوست داشته باشی</h2></div>
+        <a class="text-link" href="{{ route('shop') }}">مشاهده همه محصولات ←</a>
+    </div>
+    <div class="product-grid">
+        @foreach($relatedProducts as $relatedProduct)
+            <a class="product-card" href="{{ route('products.show',$relatedProduct) }}">
+                <div class="product-image">
+                    @if($relatedProduct->image)
+                        <img src="{{ asset('storage/'.$relatedProduct->image) }}" alt="{{ $relatedProduct->name }}" loading="lazy">
+                    @else
+                        <div class="product-placeholder"><span></span></div>
+                    @endif
+                </div>
+                <div class="product-meta"><span>{{ $relatedProduct->category?->name ?? 'THE BEAUTY EDIT' }}</span></div>
+                <h3>{{ $relatedProduct->name }}</h3>
+                @include('components.product-price',['product'=>$relatedProduct])
+            </a>
+        @endforeach
+    </div>
+</section>
+@endif
 @endsection
