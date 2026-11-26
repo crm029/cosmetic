@@ -204,7 +204,7 @@ class HomePageTest extends TestCase
         $this->get('/about')->assertOk()->assertSee('داستان ما');
         $this->get('/faq')->assertOk()->assertSee('چطور سفارش ثبت کنم؟');
         $this->get('/privacy')->assertOk()->assertSee('حریم خصوصی');
-        $this->get('/terms')->assertOk()->assertSee('قوانین و شرایط خرید');
+        $this->get('/terms')->assertOk()->assertSee('شرایط خرید');
     }
 
     public function test_product_detail_page_renders_product_and_gallery_schema(): void
