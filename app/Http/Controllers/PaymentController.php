@@ -1,9 +1,9 @@
 <?php
-namespace App\\Http\\Controllers;
-use App\\Models\\Order;
-use App\\Services\\ZarinpalService;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
+namespace App\Http\Controllers;
+use App\Models\Order;
+use App\Services\ZarinpalService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 class PaymentController extends Controller {
  public function callback(Request $request,ZarinpalService $gateway) {
   $authority=(string)$request->query('Authority','');$status=(string)$request->query('Status','');
@@ -14,7 +14,7 @@ class PaymentController extends Controller {
   DB::transaction(function()use($order){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
    if($locked->payment_status!=='paid')return;
-   foreach($locked->items as $item){$product=\\App\\Models\\Product::whereKey($item->product_id)->lockForUpdate()->first();if($product){$product->decrement('stock',$item->quantity);}}
+   foreach($locked->items as $item){$product=\App\Models\Product::whereKey($item->product_id)->lockForUpdate()->first();if($product){$product->decrement('stock',$item->quantity);}}
   });
   session()->forget('cart');
   return redirect()->route('home')->with('success','پرداخت با موفقیت تأیید شد. شماره سفارش: '.$order->order_number);
