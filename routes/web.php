@@ -15,7 +15,7 @@ Route::post('/cart/{product}',[CartController::class,'add'])->name('cart.add');
 Route::patch('/cart/{product}',[CartController::class,'update'])->name('cart.update');
 Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.remove');
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
-Route::post('/checkout',[CheckoutController::class,'store'])->name('checkout.store');
+Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
