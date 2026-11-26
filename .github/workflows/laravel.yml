@@ -4,28 +4,42 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: {}
 jobs:
   tests:
+    name: Validate Laravel application
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, pdo_sqlite, bcmath, gd, fileinfo, openssl, ctype, tokenizer, xml, curl
           coverage: none
-      - uses: actions/cache@v4
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
-      - run: composer validate --no-check-publish
-      - run: composer install --no-interaction --prefer-dist
-      - run: composer audit --no-interaction
-      - run: cp .env.example .env
-      - run: php artisan key:generate
-      - run: DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan migrate:fresh --seed
-      - run: find app routes database -name '*.php' -print0 | xargs -0 -n1 php -l
-      - run: php artisan view:cache
-      - run: php artisan test
+      - name: Validate Composer configuration
+        run: composer validate --no-check-publish
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Audit Composer dependencies
+        run: composer audit --no-interaction
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      - name: Test fresh migrations and seeders
+        run: "DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan migrate:fresh --seed"
+      - name: Lint PHP source
+        run: "find app routes database -name '*.php' -print0 | xargs -0 -n1 php -l"
+      - name: Compile all Blade views
+        run: php artisan view:cache
+      - name: Run feature tests
+        run: php artisan test
