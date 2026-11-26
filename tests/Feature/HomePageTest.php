@@ -196,4 +196,10 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('contact_messages', ['id' => $message->id, 'is_read' => true]);
     }
 
+    public function test_about_and_faq_pages_are_available(): void
+    {
+        $this->get('/about')->assertOk()->assertSee('داستان ما');
+        $this->get('/faq')->assertOk()->assertSee('چطور سفارش ثبت کنم؟');
+    }
+
 }
