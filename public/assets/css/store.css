@@ -31,3 +31,5 @@
 .category-art:has(img):before,.category-art:has(img):after{display:none}.category-art img{z-index:1}.category-art>span{z-index:2}.detail-image{height:auto;min-height:360px}.detail-image>.product-3d-viewer,.detail-image>.product-placeholder,.detail-image>img{height:480px}.product-gallery img{height:90px;object-fit:cover}
 
 .category-hero-image{display:block;width:min(560px,85vw);height:220px;object-fit:cover;margin:28px auto 0}
+
+.admin-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px;padding:15px;background:#eee6dc}.admin-filter input,.admin-filter select{min-width:150px;flex:1;padding:10px;border:1px solid var(--line);background:white;font:11px "Vazirmatn"}.admin-filter .button{padding:10px 15px}.admin-filter .text-link{font-size:10px}
