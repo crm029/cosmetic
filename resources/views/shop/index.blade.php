@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <section class="page-intro"><span class="eyebrow">THE COLLECTION</span><h1>فروشگاه <em>زیبایی</em></h1><p>انتخاب‌هایی برای روتین مراقبت روزانه تو.</p></section>
-<section class="section-block shop-layout"><aside class="shop-sidebar"><h3>دسته‌بندی‌ها</h3><a href="{{ route('shop') }}">همه محصولات</a>@foreach($categories as $category)<a href="{{ route('shop',['category'=>$category->slug]) }}">{{ $category->name }}</a>@endforeach</aside>
+<section class="section-block shop-layout"><aside class="shop-sidebar"><h3>دسته‌بندی‌ها</h3><a href="{{ route('shop') }}">همه محصولات</a>@foreach($categories as $category)<a href="{{ route('categories.show',$category) }}">{{ $category->name }}</a>@endforeach</aside>
 <div class="shop-results"><form class="search-form" method="GET" action="{{ route('shop') }}"><input name="q" value="{{ request('q') }}" placeholder="جستجوی محصول..." aria-label="جستجوی محصول"><button type="submit">جستجو</button></form><div class="product-grid">
 @forelse($products as $product)<a class="product-card" href="{{ route('products.show',$product) }}"><div class="product-image">@if($product->image)<img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}" loading="lazy">@else<div class="product-placeholder"><span></span></div>@endif</div><div class="product-meta"><span>{{ $product->category?->name ?? 'زیبایی' }}</span><span>♡</span></div><h3>{{ $product->name }}</h3><strong>{{ number_format($product->price) }} <small>تومان</small></strong></a>
 @empty <p class="empty-products">هنوز محصولی برای نمایش ثبت نشده است.</p>@endforelse</div><div class="pagination-wrap">{{ $products->links() }}</div></div></section>
