@@ -13,4 +13,12 @@ class HomePageTest extends TestCase {
   $this->post('/cart/'.$product->id,['quantity'=>2])->assertRedirect('/cart');
   $this->get('/cart')->assertOk()->assertSee('نمونه محصول')->assertSee('240,000');
  }
+ public function test_checkout_uses_server_price_and_does_not_deduct_stock_before_payment(): void {
+  $product=Product::create(['name'=>'محصول تست','slug'=>'checkout-product','price'=>120000,'stock'=>5,'is_active'=>true]);
+  $this->withSession(['cart'=>[$product->id=>2]])->post('/checkout',[
+   'customer_name'=>'مشتری آزمایشی','mobile'=>'09123456789','shipping_address'=>'تهران، خیابان نمونه، پلاک ۱'
+  ])->assertRedirect('/checkout');
+  $this->assertDatabaseHas('orders',['total'=>240000,'payment_status'=>'unpaid']);
+  $this->assertDatabaseHas('products',['id'=>$product->id,'stock'=>5]);
+ }
 }
