@@ -48,3 +48,5 @@
 .brand-logo{width:48px;height:48px;object-fit:contain}.footer-brand .brand-logo{width:42px;height:42px}.settings-logo-preview{grid-column:1/-1;width:150px;height:100px;object-fit:contain;background:#eee6dc;padding:10px}
 
 .related-products{padding-top:25px;border-top:1px solid var(--line)}.related-products .product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:620px){.related-products .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.hero-art{background-image:linear-gradient(90deg,rgba(247,239,230,.18),rgba(239,224,210,.04)),url('/assets/images/hero-scene.svg');background-size:cover;background-position:center;background-repeat:no-repeat}
