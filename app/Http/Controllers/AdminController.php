@@ -83,7 +83,7 @@ class AdminController extends Controller {
  public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,SmsService $sms) {
   if($order->payment_status!=='paid')return back()->withErrors(['stock'=>'فقط سفارش پرداخت‌شده قابل بررسی مجدد است.']);
   if(!$fulfillment->deductStock($order))return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
-  $fresh=$order->fresh();if(!$fresh->sms_sent_at&&$sms->sendOrderPaid($fresh))$fresh->update(['sms_sent_at'=>now()]);
+  $sms->sendOrderPaidOnce($order->fresh());
   return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
  public function updateOrderStatus(Request $request,Order $order,SmsService $sms) {
@@ -99,7 +99,7 @@ class AdminController extends Controller {
    $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];$locked->update($changes);return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
-  if($data['status']==='shipped'){$fresh=$order->fresh();if(!$fresh->shipment_sms_sent_at&&$sms->sendShipmentUpdate($fresh))$fresh->update(['shipment_sms_sent_at'=>now()]);}
+  if($data['status']==='shipped')$sms->sendShipmentUpdateOnce($order->fresh());
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
  private function validatedProduct(Request $request,?Product $product=null): array {
