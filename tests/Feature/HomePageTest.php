@@ -732,4 +732,5 @@ class HomePageTest extends TestCase
         ]);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
     }
-\n}\n
+
+}
