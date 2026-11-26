@@ -26,7 +26,11 @@ class AdminController extends Controller {
   $data=$this->validatedProduct($request);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);if($galleryFiles)$data['gallery']=array_map(fn($file)=>$file->store('products/gallery','public'),$galleryFiles);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
   if($request->hasFile('model_3d'))$data['model_3d']=$request->file('model_3d')->store('models','public');
   if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
-  $product=Product::create($data);if($product->stock>0)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'initial','quantity'=>$product->stock,'previous_stock'=>0,'new_stock'=>$product->stock,'note'=>'موجودی اولیه هنگام ثبت محصول']);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
+  DB::transaction(function()use($data){
+   $product=Product::create($data);
+   if($product->stock>0)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'initial','quantity'=>$product->stock,'previous_stock'=>0,'new_stock'=>$product->stock,'note'=>'موجودی اولیه هنگام ثبت محصول']);
+  });
+  return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
  }
  public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
  public function updateProduct(Request $request,Product $product) {
