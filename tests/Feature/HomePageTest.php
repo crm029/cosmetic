@@ -279,6 +279,14 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'status' => 'processing']);
         $this->assertNotNull($order->fresh()->stock_deducted_at);
         $this->assertNotNull($order->fresh()->sms_sent_at);
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'order_id' => $order->id,
+            'type' => 'sale',
+            'quantity' => -2,
+            'previous_stock' => 5,
+            'new_stock' => 3,
+        ]);
 
         $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/');
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
