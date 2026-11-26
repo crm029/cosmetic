@@ -9,6 +9,14 @@
 <button class="button button-dark" type="submit">پیگیری سفارش ←</button></form>
 @if($order)
 <div class="tracking-result"><span class="eyebrow">ORDER {{ $order->order_number }}</span><h2>{{ $order->customer_name }}</h2><p>وضعیت سفارش: <strong>{{ ['pending'=>'در انتظار پرداخت','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده','paid_stock_issue'=>'نیازمند بررسی پشتیبانی'][$order->status] ?? $order->status }}</strong></p><p>وضعیت پرداخت: {{ $order->payment_status==='paid'?'پرداخت‌شده':'پرداخت‌نشده' }}</p><p>مبلغ سفارش: {{ number_format($order->total) }} تومان</p>
+@if($order->payment_status!=='paid' && $order->status!=='cancelled')
+<form method="POST" action="{{ route('orders.pay.retry',$order) }}" class="retry-payment-form">
+@csrf
+<input type="hidden" name="order_number" value="{{ $order->order_number }}">
+<input type="hidden" name="mobile" value="{{ $order->mobile }}">
+<button class="button button-dark" type="submit">ادامه و تکمیل پرداخت ←</button>
+</form>
+@endif
 @if($order->shipping_carrier || $order->tracking_code)
 <div class="shipment-tracking">
 <h3>اطلاعات ارسال</h3>
