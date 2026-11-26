@@ -23,6 +23,12 @@ Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('th
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
  Route::get('/',[AdminController::class,'dashboard'])->name('dashboard');
  Route::post('/logout',[AdminAuthController::class,'logout'])->name('logout');
+ Route::get('/categories',[AdminController::class,'categories'])->name('categories');
+ Route::get('/categories/create',[AdminController::class,'createCategory'])->name('categories.create');
+ Route::post('/categories',[AdminController::class,'storeCategory'])->name('categories.store');
+ Route::get('/categories/{category}/edit',[AdminController::class,'editCategory'])->name('categories.edit');
+ Route::put('/categories/{category}',[AdminController::class,'updateCategory'])->name('categories.update');
+ Route::delete('/categories/{category}',[AdminController::class,'deleteCategory'])->name('categories.delete');
  Route::get('/orders',[AdminController::class,'orders'])->name('orders');
  Route::get('/orders/{order}',[AdminController::class,'showOrder'])->name('orders.show');
  Route::patch('/orders/{order}',[AdminController::class,'updateOrderStatus'])->name('orders.update');
