@@ -1,11 +1,42 @@
 # Cosmetic Store
 
-Laravel-based premium cosmetics e-commerce project.
+فروشگاه اینترنتی مستقل محصولات آرایشی و مراقبتی با Laravel 12 و PHP 8.2+.
 
-## Stack
-- PHP 8.3 / Laravel
-- MySQL
-- Blade, JavaScript, Three.js, GSAP
+## فناوری‌ها
+- Laravel 12 / PHP 8.2+
+- MySQL و Blade
+- Three.js برای جلوه‌های سه‌بعدی تدریجی و GSAP برای انیمیشن
+- طراحی واکنش‌گرا و رعایت prefers-reduced-motion
+- سئوی فنی اولیه: متادیتای صفحات، canonical، sitemap.xml و robots.txt
 
-## Configuration
-Set the deployment URL and credentials in environment variables. Never commit `.env` or real secrets.
+## راه‌اندازی
+1. PHP 8.2+ و Composer را نصب کنید.
+2. `composer install`
+3. `cp .env.example .env` و مشخصات دیتابیس را وارد کنید.
+4. `php artisan key:generate`
+5. `php artisan migrate --seed`
+6. `php artisan storage:link`
+7. برای ساخت اولین مدیر: `php artisan store:make-admin` و طبق پرسش‌ها عمل کنید.
+8. `php artisan serve`
+
+## ورود مدیریت
+مسیر ورود: `/admin/login`. حساب مدیر فقط از طریق دستور امن Artisan ساخته می‌شود؛ هیچ رمز پیش‌فرضی در مخزن وجود ندارد.
+
+## استقرار روی هاست اشتراکی
+- وابستگی‌ها را با Composer نصب و فایل .env را فقط روی سرور تنظیم کنید.
+- `APP_ENV=production` و `APP_DEBUG=false` قرار دهید.
+- `APP_URL` را پس از انتخاب دامنه واقعی تنظیم کنید؛ دامنه‌ای در کد ثابت نشده است.
+- Document Root دامنه باید به پوشه `public` اشاره کند. پوشه‌های app، vendor و فایل .env نباید از وب قابل دسترسی باشند.
+- به `storage` و `bootstrap/cache` دسترسی نوشتن بدهید.
+- دیتابیس را بسازید، سپس `php artisan migrate --force --seed` اجرا کنید.
+- مقدار واقعی `ZARINPAL_MERCHANT_ID` را فقط در متغیرهای محیطی هاست تنظیم کنید. تا آن زمان پرداخت غیرفعال می‌ماند.
+- پیامک 0098 هنوز به API و الگوی پیامک واقعی نیاز دارد؛ کلید آن را فقط در محیط سرور وارد کنید.
+
+## فروش و سفارش
+کاتالوگ، دسته‌بندی، صفحه محصول، سبد خرید نشست‌محور، ثبت سفارش مهمان و زیرساخت درخواست/تأیید زرین‌پال پیاده شده‌اند. مبلغ از دیتابیس سمت سرور محاسبه می‌شود و موجودی در سرور کنترل می‌شود.
+
+## امنیت
+فایل .env و کلیدهای واقعی نباید وارد Git شوند. ورود مدیریت محدودیت تلاش دارد، پنل با middleware محافظت می‌شود، CSRF فعال است، آپلود تصویر محدودیت نوع/حجم دارد و قیمت/موجودی از مرورگر پذیرفته نمی‌شوند.
+
+## وضعیت توسعه
+این مخزن شامل زیرساخت و صفحات اولیه فروشگاه است. قبل از بهره‌برداری واقعی باید تست CI سبز شود، پروژه روی نسخه PHP/افزونه‌های هاست اجرا شود، کلید و درگاه در محیط واقعی تنظیم شوند و فرآیند ارسال پیامک/تحویل سفارش مطابق کسب‌وکار تکمیل و آزمایش شود.
