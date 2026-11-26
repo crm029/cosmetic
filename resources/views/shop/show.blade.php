@@ -9,7 +9,13 @@
 <section class="section-block product-detail">
     <div class="detail-image">
         @if($product->model_3d)
-            <div class="product-3d-viewer" role="region" aria-label="نمایش سه‌بعدی محصول؛ برای چرخاندن لمس یا ماوس را حرکت دهید" data-model-url="{{ asset('storage/'.$product->model_3d) }}"></div>
+            <div class="product-3d-viewer" role="region" aria-label="نمایش سه‌بعدی محصول؛ برای چرخاندن لمس یا ماوس را حرکت دهید" data-model-url="{{ asset('storage/'.$product->model_3d) }}">
+                @if($product->image)
+                    <img class="product-3d-fallback" src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">
+                @else
+                    <div class="product-3d-fallback product-placeholder detail-placeholder"><span></span></div>
+                @endif
+            </div>
         @else
             @if($product->image)
                 <img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">
