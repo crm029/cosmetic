@@ -44,6 +44,7 @@ class ProductController extends Controller {
    ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
    ['@type'=>'ListItem','position'=>3,'name'=>$product->name,'item'=>url()->current()],
   ]];
-  return view('shop.show',['product'=>$product,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
+  $relatedProducts=Product::where('is_active',true)->where('id','!=',$product->id)->when($product->category_id,fn($q)=>$q->where('category_id',$product->category_id))->latest()->take(4)->get();
+  return view('shop.show',['product'=>$product,'relatedProducts'=>$relatedProducts,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
  }
 }
