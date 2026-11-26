@@ -9,11 +9,11 @@ class AppServiceProvider extends ServiceProvider {
  public function boot(): void {
   if($this->app->environment('production')) URL::forceScheme('https');
   View::composer('layouts.app',function($view){
-   $data=$view->getData();$product=$data['product']??null;$category=$data['category']??null;
-   $socialImage=$product&&$product->image?asset('storage/'.$product->image):($category&&$category->image?asset('storage/'.$category->image):null);
+   $data=$view->getData();$product=$data['product']??null;$category=$data['category']??null;$storeSettings=StoreSetting::current();
+   $socialImage=$product&&$product->image?asset('storage/'.$product->image):($category&&$category->image?asset('storage/'.$category->image):($storeSettings->logo_path?asset('storage/'.$storeSettings->logo_path):null));
    $catalogFiltered=request()->filled('q')||request()->filled('category')||request()->filled('min_price')||request()->filled('max_price')||request()->boolean('in_stock')||(request()->filled('sort')&&request('sort')!=='latest');
    $noIndex=request()->routeIs('cart.*','checkout.*','admin.*','orders.track*')||(request()->routeIs('shop')&&$catalogFiltered);
-   $view->with(['storeSettings'=>StoreSetting::current(),'socialImage'=>$socialImage,'noIndex'=>$noIndex]);
+   $view->with(['storeSettings'=>$storeSettings,'socialImage'=>$socialImage,'noIndex'=>$noIndex]);
   });
  }
 }
