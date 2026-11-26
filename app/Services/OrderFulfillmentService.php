@@ -1,10 +1,10 @@
 <?php
-namespace App\Services;
+namespace App\\Services;
 
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\StockMovement;
-use Illuminate\Support\Facades\DB;
+use App\\Models\\Order;
+use App\\Models\\Product;
+use App\\Models\\StockMovement;
+use Illuminate\\Support\\Facades\\DB;
 
 class OrderFulfillmentService
 {
@@ -17,17 +17,15 @@ class OrderFulfillmentService
                 return true;
             }
 
-            if ($lockedOrder->payment_status !== 'paid') {
+            if ($lockedOrder->payment_status !== 'paid' || $lockedOrder->status === 'refund_required') {
                 return false;
             }
 
             if ($lockedOrder->status === 'cancelled') {
-                $lockedOrder->update(['status' => 'paid_stock_issue']);
+                $lockedOrder->update(['status' => 'refund_required']);
                 return false;
             }
 
-            // Aggregate repeated order lines, then lock products in a stable order.
-            // This prevents duplicate-line over-selling and reduces deadlock risk.
             $requiredByProduct = $lockedOrder->items()
                 ->get()
                 ->groupBy('product_id')
