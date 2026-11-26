@@ -38,6 +38,8 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::get('/categories/{category}/edit',[AdminController::class,'editCategory'])->name('categories.edit');
  Route::put('/categories/{category}',[AdminController::class,'updateCategory'])->name('categories.update');
  Route::delete('/categories/{category}',[AdminController::class,'deleteCategory'])->name('categories.delete');
+ Route::get('/settings',[AdminController::class,'settings'])->name('settings');
+ Route::put('/settings',[AdminController::class,'updateSettings'])->name('settings.update');
  Route::get('/messages',[AdminController::class,'messages'])->name('messages');
  Route::patch('/messages/{message}/read',[AdminController::class,'markMessageRead'])->name('messages.read');
  Route::get('/orders',[AdminController::class,'orders'])->name('orders');
