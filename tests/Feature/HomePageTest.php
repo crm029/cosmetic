@@ -702,4 +702,38 @@ class HomePageTest extends TestCase
         $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
     }
 
-}
+
+    public function test_gateway_connection_failure_shows_order_number_for_later_payment_retry(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['message' => 'temporary gateway outage'], 503),
+        ]);
+
+        $product = Product::create(['name' => 'محصول خطای درگاه', 'slug' => 'gateway-outage-product', 'price' => 125000, 'stock' => 4, 'is_active' => true]);
+
+        $response = $this->withSession(['cart' => [$product->id => 1]])->post('/checkout', [
+            'customer_name' => 'مشتری درگاه',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه، پلاک ۱',
+        ])->assertRedirect('/checkout');
+
+        $order = Order::where('mobile', '09123456789')->latest()->firstOrFail();
+        $response->assertSessionHasErrors('checkout');
+        $this->get('/checkout')->assertOk()->assertSee($order->order_number)->assertSee('پرداخت مجدد');
+        $this->post('/order/'.$order->id.'/pay', [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertRedirect('/checkout');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'payment_status' => 'unpaid',
+            'payment_authority' => null,
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
+    }
+\n}\n
