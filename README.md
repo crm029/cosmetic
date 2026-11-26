@@ -44,3 +44,7 @@
 
 ## وضعیت توسعه
 این مخزن شامل زیرساخت و صفحات اولیه فروشگاه است. قبل از بهره‌برداری واقعی باید تست CI سبز شود، پروژه روی نسخه PHP/افزونه‌های هاست اجرا شود، کلید و درگاه در محیط واقعی تنظیم شوند و فرآیند ارسال پیامک/تحویل سفارش مطابق کسب‌وکار تکمیل و آزمایش شود.
+
+
+## Automated validation
+The Laravel CI workflow runs Composer validation and the feature test suite on pull requests and main-branch pushes.
