@@ -11,6 +11,7 @@ class PaymentController extends Controller {
   $authority=(string)$request->query('Authority','');$status=(string)$request->query('Status','');
   $order=Order::where('payment_authority',$authority)->first();
   if(!$order)return redirect()->route('home')->withErrors(['payment'=>'سفارش پرداخت‌شده پیدا نشد.']);
+  if($order->status==='cancelled')return redirect()->route('home')->withErrors(['payment'=>'این سفارش لغو شده و امکان تکمیل پرداخت آن وجود ندارد.']);
   if(strtoupper($status)!=='OK')return redirect()->route('home')->withErrors(['payment'=>'پرداخت توسط کاربر لغو شد یا ناموفق بود.']);
   try {
    if($order->payment_status!=='paid'&&!$gateway->verify($order))return redirect()->route('home')->withErrors(['payment'=>'تأیید پرداخت از سوی درگاه انجام نشد.']);
