@@ -272,4 +272,19 @@ class HomePageTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_catalog_filters_products_by_price_and_stock(): void
+    {
+        Product::create(['name' => 'ارزان', 'slug' => 'cheap-item', 'price' => 90000, 'stock' => 5, 'is_active' => true]);
+        Product::create(['name' => 'در بازه', 'slug' => 'middle-item', 'price' => 180000, 'stock' => 4, 'is_active' => true]);
+        Product::create(['name' => 'ناموجود', 'slug' => 'out-item', 'price' => 200000, 'stock' => 0, 'is_active' => true]);
+        Product::create(['name' => 'گران', 'slug' => 'expensive-item', 'price' => 500000, 'stock' => 2, 'is_active' => true]);
+
+        $this->get('/shop?min_price=100000&max_price=250000&in_stock=1&sort=price_asc')
+            ->assertOk()
+            ->assertSee('در بازه')
+            ->assertDontSee('ارزان')
+            ->assertDontSee('ناموجود')
+            ->assertDontSee('گران');
+    }
+
 }
