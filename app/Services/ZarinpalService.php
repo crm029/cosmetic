@@ -1,7 +1,7 @@
 <?php
-namespace App\\Services;
-use App\\Models\\Order;
-use Illuminate\\Support\\Facades\\Http;
+namespace App\Services;
+use App\Models\Order;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 class ZarinpalService {
  private function baseUrl(): string { return rtrim((string)config('services.zarinpal.base_url','https://api.zarinpal.com/pg/v4/payment'),' /'); }
