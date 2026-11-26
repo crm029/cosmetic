@@ -220,8 +220,10 @@ class HomePageTest extends TestCase
 
     public function test_product_detail_page_renders_product_and_gallery_schema(): void
     {
+        $category = Category::create(['name' => 'مراقبت پوست', 'slug' => 'serum-category', 'is_active' => true]);
         $product = Product::create([
             'name' => 'سرم آزمایشی',
+            'category_id' => $category->id,
             'slug' => 'schema-serum',
             'price' => 350000,
             'stock' => 3,
@@ -229,9 +231,12 @@ class HomePageTest extends TestCase
             'gallery' => ['products/gallery/serum-side.webp'],
         ]);
 
+        Product::create(['name' => 'کرم مکمل', 'slug' => 'related-cream', 'category_id' => $category->id, 'price' => 200000, 'stock' => 2, 'is_active' => true]);
+
         $this->get('/product/'.$product->slug)
             ->assertOk()
             ->assertSee('سرم آزمایشی')
+            ->assertSee('کرم مکمل')
             ->assertSee('BreadcrumbList', false)
             ->assertSee('"@type":"Product"', false);
     }
