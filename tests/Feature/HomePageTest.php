@@ -563,4 +563,16 @@ class HomePageTest extends TestCase
         $this->get('/admin')->assertOk()->assertSee('محصولات با موجودی کم (1)');
     }
 
+    public function test_admin_dashboard_summarizes_paid_revenue_and_unpaid_orders(): void
+    {
+        $admin = User::create(['name' => 'مدیر فروش', 'mobile' => '09111111124', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        Order::create(['order_number' => 'CS-REVENUE-01', 'customer_name' => 'مشتری پرداخت‌شده', 'mobile' => '09123456789', 'shipping_address' => 'تهران، نشانی نمونه', 'subtotal' => 250000, 'shipping_amount' => 0, 'total' => 250000, 'status' => 'processing', 'payment_status' => 'paid']);
+        Order::create(['order_number' => 'CS-REVENUE-02', 'customer_name' => 'مشتری پرداخت‌نشده', 'mobile' => '09123456780', 'shipping_address' => 'تهران، نشانی نمونه', 'subtotal' => 90000, 'shipping_amount' => 0, 'total' => 90000, 'status' => 'pending', 'payment_status' => 'unpaid']);
+
+        $this->actingAs($admin)->get('/admin')
+            ->assertOk()
+            ->assertSee('250,000')
+            ->assertSee('سفارش‌های پرداخت‌نشده');
+    }
+
 }
