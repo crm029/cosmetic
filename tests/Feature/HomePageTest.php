@@ -5,6 +5,8 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -110,6 +112,46 @@ class HomePageTest extends TestCase
             ->assertSessionHasErrors('status');
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'pending']);
+    }
+
+    public function test_admin_can_create_a_product_with_gallery_images(): void
+    {
+        Storage::fake('public');
+        $admin = User::create(['name' => 'مدیر گالری', 'mobile' => '09111111113', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+
+        $this->actingAs($admin)->post('/admin/products', [
+            'name' => 'سرم تست',
+            'slug' => 'test-serum',
+            'price' => 250000,
+            'stock' => 7,
+            'gallery_images' => [
+                UploadedFile::fake()->image('serum-front.jpg'),
+                UploadedFile::fake()->image('serum-side.jpg'),
+            ],
+        ])->assertRedirect('/admin/products');
+
+        $product = Product::where('slug', 'test-serum')->firstOrFail();
+        $this->assertCount(2, $product->gallery);
+        foreach ($product->gallery as $image) {
+            Storage::disk('public')->assertExists($image);
+        }
+    }
+
+    public function test_admin_can_upload_a_category_cover_image(): void
+    {
+        Storage::fake('public');
+        $admin = User::create(['name' => 'مدیر دسته', 'mobile' => '09111111114', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+
+        $this->actingAs($admin)->post('/admin/categories', [
+            'name' => 'مراقبت بدن',
+            'slug' => 'body-care-test',
+            'image' => UploadedFile::fake()->image('body-care.jpg'),
+            'is_active' => '1',
+        ])->assertRedirect('/admin/categories');
+
+        $category = Category::where('slug', 'body-care-test')->firstOrFail();
+        $this->assertNotEmpty($category->image);
+        Storage::disk('public')->assertExists($category->image);
     }
 
 }
