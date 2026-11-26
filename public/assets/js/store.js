@@ -13,11 +13,22 @@ function addLights(scene){
  const key=new THREE.PointLight(0xffdfc4,32,25);key.position.set(-3,4,6);scene.add(key);
  const rim=new THREE.PointLight(0xe6c9b1,18,18);rim.position.set(4,-2,4);scene.add(rim);
 }
+function makeLabelTexture(){
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=280;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#f4e9de';ctx.fillRect(0,0,512,280);
+ ctx.strokeStyle='#b18b65';ctx.lineWidth=3;ctx.strokeRect(18,18,476,244);
+ ctx.textAlign='center';ctx.fillStyle='#5b463b';ctx.font='italic 34px Georgia';ctx.fillText('THE BEAUTY EDIT',256,100);
+ ctx.fillStyle='#927564';ctx.font='500 23px Arial';ctx.fillText('SKINCARE',256,155);
+ ctx.strokeStyle='#b18b65';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(150,180);ctx.lineTo(362,180);ctx.stroke();
+ ctx.fillStyle='#8b7668';ctx.font='18px Arial';ctx.fillText('BOTANICAL SERUM  •  30 ML',256,218);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+const labelTexture=makeLabelTexture();
 function makeBottle(scene,{x=0,y=0,scale=1,tint=0xd6b7a8}={}){
  const group=new THREE.Group();group.position.set(x,y,0);group.scale.setScalar(scale);scene.add(group);
  const glass=new THREE.MeshPhysicalMaterial({color:tint,metalness:.12,roughness:.2,transparent:true,opacity:.94,clearcoat:1,clearcoatRoughness:.12});
  const gold=new THREE.MeshStandardMaterial({color:0xb18b65,metalness:.78,roughness:.23});
- const label=new THREE.MeshStandardMaterial({color:0xf5e9dc,roughness:.8});
+ const label=new THREE.MeshStandardMaterial({map:labelTexture,roughness:.8});
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.62,.58,2.15,48,1,false),glass);body.position.y=-.1;group.add(body);
  const shoulder=new THREE.Mesh(new THREE.CylinderGeometry(.28,.58,.38,48),glass);shoulder.position.y=1.16;group.add(shoulder);
  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.28,32),gold);neck.position.y=1.47;group.add(neck);
