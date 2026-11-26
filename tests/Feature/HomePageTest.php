@@ -6,6 +6,7 @@ use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\StoreSetting;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -285,6 +286,41 @@ class HomePageTest extends TestCase
             ->assertDontSee('Cheap Filter Product')
             ->assertDontSee('Out Of Stock Filter Product')
             ->assertDontSee('Expensive Filter Product');
+    }
+
+    public function test_admin_can_update_store_settings_and_shipping_policy(): void
+    {
+        $admin = User::create(['name' => 'مدیر تنظیمات', 'mobile' => '09111111116', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+
+        $this->actingAs($admin)->put('/admin/settings', [
+            'store_name' => 'فروشگاه زیبایی تست',
+            'tagline' => 'مراقبت با انتخاب آگاهانه',
+            'shipping_fee_toman' => 12000,
+            'free_shipping_threshold_toman' => 300000,
+            'support_mobile' => '09123456789',
+            'support_email' => 'support@example.test',
+            'address' => 'تهران، نشانی نمونه',
+            'ink_color' => '#29251f',
+            'accent_color' => '#a77d6a',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('store_settings', [
+            'id' => 1,
+            'store_name' => 'فروشگاه زیبایی تست',
+            'shipping_fee_toman' => 12000,
+            'free_shipping_threshold_toman' => 300000,
+        ]);
+    }
+
+    public function test_checkout_uses_admin_configured_shipping_fee(): void
+    {
+        StoreSetting::current()->update(['shipping_fee_toman' => 12000, 'free_shipping_threshold_toman' => 300000]);
+        $product = Product::create(['name' => 'محصول با ارسال', 'slug' => 'shipping-product', 'price' => 100000, 'stock' => 4, 'is_active' => true]);
+
+        $this->withSession(['cart' => [$product->id => 1]])->get('/checkout')
+            ->assertOk()
+            ->assertSee('12,000')
+            ->assertSee('112,000');
     }
 
 }
