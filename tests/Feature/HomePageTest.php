@@ -897,4 +897,23 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'unpaid', 'status' => 'pending']);
     }
 
+
+    public function test_repeated_payment_callback_cannot_reverse_a_recorded_refund(): void
+    {
+        Http::fake();
+        $product = Product::create(['name' => 'محصول مستردشده', 'slug' => 'already-refunded-product', 'price' => 50000, 'stock' => 2, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-REFUNDED-CALLBACK-01', 'customer_name' => 'مشتری مستردشده', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 50000, 'shipping_amount' => 0, 'total' => 50000,
+            'status' => 'cancelled', 'payment_status' => 'refunded', 'payment_authority' => 'A000000000000000000000000000008',
+            'refund_ref_id' => 'REF-ALREADY-DONE', 'refund_note' => 'بازپرداخت قبلاً انجام شده است.', 'refunded_at' => now(),
+        ]);
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')
+            ->assertRedirect('/')
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'refunded', 'status' => 'cancelled', 'refund_ref_id' => 'REF-ALREADY-DONE']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
+        Http::assertNothingSent();
+    }
+
 }
