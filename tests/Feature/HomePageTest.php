@@ -4,10 +4,12 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\ContactMessage;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -227,6 +229,47 @@ class HomePageTest extends TestCase
             ->assertSee('/about', false)
             ->assertSee('/faq', false)
             ->assertSee('/contact', false);
+    }
+
+    public function test_successful_payment_deducts_stock_once_and_sends_confirmation_sms(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+            'services.0098sms.base_url' => 'https://sms.test/send',
+            'services.0098sms.username' => 'test-user',
+            'services.0098sms.password' => 'test-password',
+            'services.0098sms.sender' => '10001000',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987654]], 200),
+            'sms.test/*' => Http::response('1', 200),
+        ]);
+
+        $product = Product::create(['name' => 'محصول پرداخت', 'slug' => 'paid-product', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-PAY001',
+            'customer_name' => 'مشتری پرداخت',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'A000000000000000000000000000001',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 2, 'line_total' => 200000]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/');
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'status' => 'processing']);
+        $this->assertNotNull($order->fresh()->stock_deducted_at);
+        $this->assertNotNull($order->fresh()->sms_sent_at);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/');
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+        Http::assertSentCount(2);
     }
 
 }
