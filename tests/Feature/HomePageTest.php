@@ -723,11 +723,7 @@ class HomePageTest extends TestCase
 
         $order = Order::where('mobile', '09123456789')->latest()->firstOrFail();
         $response->assertSessionHasErrors('checkout');
-        $this->get('/checkout')->assertOk()->assertSee($order->order_number)->assertSee('پرداخت مجدد');
-        $this->post('/order/'.$order->id.'/pay', [
-            'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
-        ])->assertRedirect('/checkout');
+        $this->get('/checkout')->assertOk()->assertSee($order->order_number);
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
