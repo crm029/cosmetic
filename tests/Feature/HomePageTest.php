@@ -826,4 +826,38 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
     }
 
+
+    public function test_successful_gateway_payment_after_order_cancellation_is_recorded_for_refund(): void
+    {
+        config(['services.zarinpal.merchant_id' => 'test-merchant', 'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment']);
+        Http::fake(['api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987657]], 200)]);
+        $product = Product::create(['name' => 'محصول لغوشده', 'slug' => 'cancelled-paid-product', 'price' => 100000, 'stock' => 4, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-CANCEL-PAY-001', 'customer_name' => 'مشتری لغوشده', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه', 'subtotal' => 100000, 'shipping_amount' => 0, 'total' => 100000,
+            'status' => 'cancelled', 'payment_status' => 'unpaid', 'payment_authority' => 'A000000000000000000000000000006',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 1, 'line_total' => 100000]);
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/')->assertSessionHasErrors('payment');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'payment_ref_id' => '987657', 'status' => 'refund_required']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
+        $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
+    }
+
+    public function test_already_verified_gateway_callback_code_101_records_cancelled_payment_for_refund(): void
+    {
+        config(['services.zarinpal.merchant_id' => 'test-merchant', 'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment']);
+        Http::fake(['api.zarinpal.com/*' => Http::response(['data' => ['code' => 101, 'ref_id' => 987658]], 200)]);
+        $product = Product::create(['name' => 'محصول بازپرداخت', 'slug' => 'refund-required-product', 'price' => 70000, 'stock' => 3, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-REFUND-101', 'customer_name' => 'مشتری بازپرداخت', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی نمونه', 'subtotal' => 70000, 'shipping_amount' => 0, 'total' => 70000,
+            'status' => 'cancelled', 'payment_status' => 'unpaid', 'payment_authority' => 'A000000000000000000000000000007',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 70000, 'quantity' => 1, 'line_total' => 70000]);
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/')->assertSessionHasErrors('payment');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'status' => 'refund_required']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+    }
+
 }
