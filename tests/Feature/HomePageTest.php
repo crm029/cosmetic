@@ -331,4 +331,57 @@ class HomePageTest extends TestCase
         $this->get('/shop?q=serum')->assertOk()->assertSee('content="noindex,nofollow"', false);
     }
 
+    public function test_admin_can_retry_fulfillment_for_paid_stock_issue_order(): void
+    {
+        $admin = User::create(['name' => 'مدیر انبار', 'mobile' => '09111111117', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'محصول کم‌موجودی', 'slug' => 'low-stock-item', 'price' => 100000, 'stock' => 1, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-STOCK01',
+            'customer_name' => 'مشتری پرداخت‌شده',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'paid_stock_issue',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 2, 'line_total' => 200000]);
+
+        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+
+        $product->update(['stock' => 3]);
+        $this->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'processing']);
+
+        $this->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+    }
+
+    public function test_late_payment_callback_cannot_settle_a_cancelled_order(): void
+    {
+        Http::fake();
+        $order = Order::create([
+            'order_number' => 'CS-261126-CANCEL1',
+            'customer_name' => 'مشتری لغوکننده',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'cancelled',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'A000000000000000000000000000002',
+        ]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')
+            ->assertRedirect('/')
+            ->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled', 'payment_status' => 'unpaid']);
+        Http::assertNothingSent();
+    }
+
 }
