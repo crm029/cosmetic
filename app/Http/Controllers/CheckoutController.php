@@ -1,13 +1,13 @@
 <?php
-namespace App\\Http\\Controllers;
-use App\\Models\\Order;
-use App\\Models\\OrderItem;
-use App\\Models\\Product;
-use App\\Services\\ZarinpalService;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Str;
-use Illuminate\\View\\View;
+namespace App\Http\Controllers;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Services\ZarinpalService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 use RuntimeException;
 class CheckoutController extends Controller {
  public function index(Request $request): View {
@@ -33,7 +33,7 @@ class CheckoutController extends Controller {
    return redirect()->away($url);
   } catch (RuntimeException $e) {
    return redirect()->route('checkout.index')->withErrors(['payment'=>$e->getMessage().' سفارش '.$order->order_number.' ثبت اولیه شد؛ پس از تنظیم درگاه، پرداخت را فعال کنید.']);
-  } catch (\\Throwable $e) {
+  } catch (\Throwable $e) {
    report($e);return redirect()->route('checkout.index')->withErrors(['payment'=>'اتصال به درگاه پرداخت انجام نشد. لطفاً بعداً تلاش کنید.']);
   }
  }
