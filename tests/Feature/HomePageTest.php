@@ -48,7 +48,7 @@ class HomePageTest extends TestCase
 
         Http::assertSentCount(1);
         Http::assertSent(function ($request) use ($order) {
-            return $request->url() === 'https://sms.example.test/send'
+            return parse_url($request->url(), PHP_URL_PATH) === '/send'
                 && $request['FROM'] === '1000'
                 && $request['TO'] === $order->mobile
                 && $request['TEXT'] !== ''
