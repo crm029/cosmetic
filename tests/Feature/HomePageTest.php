@@ -430,9 +430,16 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
     }
 
-    public function test_late_payment_callback_cannot_settle_a_cancelled_order(): void
+    public function test_late_payment_callback_records_successful_payment_on_cancelled_order_for_refund(): void
     {
-        Http::fake();
+        config([
+            'services.zarinpal.merchant_id' => 'e3f4743b-58e6-4e14-b61f-dd5b71e59355',
+            'services.zarinpal.base_url' => 'https://sandbox.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'sandbox.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987659]], 200),
+        ]);
+        $product = Product::create(['name' => 'محصول سفارش لغوشده', 'slug' => 'cancelled-order-late-payment', 'price' => 100000, 'stock' => 2, 'is_active' => true]);
         $order = Order::create([
             'order_number' => 'CS-261126-CANCEL1',
             'customer_name' => 'مشتری لغوکننده',
@@ -443,15 +450,23 @@ class HomePageTest extends TestCase
             'total' => 100000,
             'status' => 'cancelled',
             'payment_status' => 'unpaid',
-            'payment_authority' => 'A000000000000000000000000000002',
+            'payment_authority' => 'S0000000000000000000000000000004',
         ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 1, 'line_total' => 100000]);
 
         $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')
             ->assertRedirect('/')
             ->assertSessionHasErrors('payment');
 
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled', 'payment_status' => 'unpaid']);
-        Http::assertNothingSent();
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'refund_required',
+            'payment_status' => 'paid',
+            'payment_ref_id' => '987659',
+        ]);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
+        $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
+        Http::assertSent(fn ($request) => $request->url() === 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json');
     }
 
     public function test_admin_can_filter_products_by_search_and_visibility(): void
