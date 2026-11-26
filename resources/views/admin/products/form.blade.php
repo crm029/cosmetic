@@ -1,0 +1,14 @@
+@extends('layouts.app')
+@section('content')
+<section class="admin-wrap"><div class="admin-top"><div><span class="eyebrow">PRODUCT EDITOR</span><h1>{{ $product->exists?'ویرایش محصول':'افزودن محصول' }}</h1></div><a class="text-link" href="{{ route('admin.products') }}">بازگشت ←</a></div>
+@if($errors->any())<div class="notice-error">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+<form class="admin-form" method="POST" enctype="multipart/form-data" action="{{ $product->exists?route('admin.products.update',$product):route('admin.products.store') }}">@csrf @if($product->exists)@method('PUT')@endif
+<label>نام محصول<input name="name" value="{{ old('name',$product->name) }}" required></label><label>آدرس انگلیسی (slug)<input name="slug" value="{{ old('slug',$product->slug) }}" placeholder="sample-product"></label><label>کد محصول / SKU<input name="sku" value="{{ old('sku',$product->sku) }}"></label>
+<label>دسته‌بندی<select name="category_id"><option value="">بدون دسته</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(old('category_id',$product->category_id)==$category->id)>{{ $category->name }}</option>@endforeach</select></label>
+<label>قیمت (تومان)<input type="number" name="price" min="0" value="{{ old('price',$product->price) }}" required></label><label>قیمت قبل از تخفیف<input type="number" name="compare_price" min="0" value="{{ old('compare_price',$product->compare_price) }}"></label><label>موجودی<input type="number" name="stock" min="0" value="{{ old('stock',$product->stock??0) }}" required></label>
+<label>توضیح کوتاه<textarea name="short_description" rows="2">{{ old('short_description',$product->short_description) }}</textarea></label><label>توضیحات کامل<textarea name="description" rows="5">{{ old('description',$product->description) }}</textarea></label>
+<label>تصویر اصلی محصول (حداکثر ۵ مگابایت)<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif"></label>@if($product->image)<img class="admin-preview" src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">@endif
+<div class="admin-checks"><label><input type="checkbox" name="is_active" value="1" @checked(old('is_active',$product->is_active))> انتشار محصول</label><label><input type="checkbox" name="is_featured" value="1" @checked(old('is_featured',$product->is_featured))> محصول منتخب</label></div>
+<h3>تنظیمات سئو</h3><label>عنوان سئو<input name="seo_title" value="{{ old('seo_title',$product->seo_title) }}" maxlength="190"></label><label>توضیحات متا<textarea name="seo_description" rows="2" maxlength="300">{{ old('seo_description',$product->seo_description) }}</textarea></label><label>Canonical URL<input name="canonical_url" type="url" value="{{ old('canonical_url',$product->canonical_url) }}"></label>
+<button class="button button-dark" type="submit">ذخیره محصول ←</button></form></section>
+@endsection
