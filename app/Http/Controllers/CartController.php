@@ -23,6 +23,7 @@ class CartController extends Controller {
  }
  public function update(Request $request, Product $product): RedirectResponse {
   $data=$request->validate(['quantity'=>['required','integer','min:1','max:20']]);
+  if(!$product->is_active){$cart=$request->session()->get('cart',[]);unset($cart[$product->id]);$request->session()->put('cart',$cart);return back()->withErrors(['cart'=>'این محصول دیگر برای فروش فعال نیست و از سبد خرید حذف شد.']);}
   if($data['quantity']>$product->stock)return back()->withErrors(['cart'=>'موجودی کافی نیست.']);
   $cart=$request->session()->get('cart',[]);$cart[$product->id]=$data['quantity'];$request->session()->put('cart',$cart);
   return back()->with('success','سبد خرید به‌روزرسانی شد.');
