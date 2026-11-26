@@ -8,3 +8,4 @@
 .order-admin-head,.order-admin-row{grid-template-columns:1.1fr 1fr 1fr 1fr 1fr 1fr;min-width:760px}.order-admin-row{display:grid}.order-status-form{display:flex;align-items:end;gap:15px;margin-top:25px}.order-status-form label{display:grid;gap:8px;font-size:11px}.order-status-form select{min-width:220px;padding:12px;border:1px solid var(--line);background:white;font:12px "Vazirmatn"}@media(max-width:600px){.order-status-form{align-items:stretch;flex-direction:column}.order-status-form select{width:100%}}
 
 .category-admin-head,.category-admin-row{grid-template-columns:1.2fr 1fr .6fr .7fr 1fr;min-width:650px}.detail-placeholder{position:relative;overflow:hidden}.category-admin-row{display:grid}
+.admin-shortcuts{display:flex;gap:18px;flex-wrap:wrap;align-items:center}.admin-shortcuts .text-link{font-size:10px}@media(max-width:600px){.admin-shortcuts{gap:12px}}
