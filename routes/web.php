@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 Route::get('/',[HomeController::class,'index'])->name('home');
 Route::get('/shop',[ProductController::class,'index'])->name('shop');
+Route::get('/category/{category:slug}',[ProductController::class,'category'])->name('categories.show');
 Route::get('/product/{product:slug}',[ProductController::class,'show'])->name('products.show');
 Route::get('/cart',[CartController::class,'index'])->name('cart.index');
 Route::post('/cart/{product}',[CartController::class,'add'])->name('cart.add');
