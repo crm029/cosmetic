@@ -24,6 +24,12 @@ class AdminController extends Controller {
   $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
  public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);$product->delete();return back()->with('success','محصول حذف شد.'); }
+ public function orders(): View { return view('admin.orders.index',['orders'=>Order::latest()->paginate(25)]); }
+ public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
+ public function updateOrderStatus(Request $request,Order $order) {
+  $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled']]);
+  $order->update(['status'=>$data['status']]);return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
+ }
  private function validatedProduct(Request $request,?Product $product=null): array {
   return $request->validate([
    'category_id'=>['nullable','exists:categories,id'],'name'=>['required','string','max:190'],
