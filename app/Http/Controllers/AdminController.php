@@ -5,6 +5,7 @@ use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\StoreSetting;
+use App\Models\StockMovement;
 use App\Services\OrderFulfillmentService;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
@@ -25,15 +26,16 @@ class AdminController extends Controller {
   $data=$this->validatedProduct($request);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);if($galleryFiles)$data['gallery']=array_map(fn($file)=>$file->store('products/gallery','public'),$galleryFiles);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
   if($request->hasFile('model_3d'))$data['model_3d']=$request->file('model_3d')->store('models','public');
   if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
-  Product::create($data);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
+  $product=Product::create($data);if($product->stock>0)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'initial','quantity'=>$product->stock,'previous_stock'=>0,'new_stock'=>$product->stock,'note'=>'موجودی اولیه هنگام ثبت محصول']);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
  }
  public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
  public function updateProduct(Request $request,Product $product) {
   $data=$this->validatedProduct($request,$product);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);$gallery=$product->gallery??[];foreach((array)$request->input('remove_gallery',[]) as $index){if(isset($gallery[$index])){Storage::disk('public')->delete($gallery[$index]);unset($gallery[$index]);}}$gallery=array_values($gallery);if(count($gallery)+count($galleryFiles)>8)return back()->withErrors(['gallery_images'=>'هر محصول حداکثر ۸ تصویر گالری می‌تواند داشته باشد.'])->withInput();foreach($galleryFiles as $file)$gallery[]=$file->store('products/gallery','public');if($gallery!==($product->gallery??[]))$data['gallery']=$gallery;if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
   if($request->hasFile('model_3d')){if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$data['model_3d']=$request->file('model_3d')->store('models','public');}
   if(empty($data['slug']))$data['slug']=$product->slug;
-  $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
+  $previousStock=$product->stock;$product->update($data);$newStock=(int)$product->fresh()->stock;if($newStock!==$previousStock)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'adjustment','quantity'=>$newStock-$previousStock,'previous_stock'=>$previousStock,'new_stock'=>$newStock,'note'=>'اصلاح موجودی از پنل مدیریت']);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
+ public function stockHistory(Product $product): View { return view('admin.products.stock-history',['product'=>$product,'movements'=>StockMovement::with(['admin','order'])->where('product_id',$product->id)->latest()->paginate(30)]); }
  public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);foreach($product->gallery??[] as $image)Storage::disk('public')->delete($image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$product->delete();return back()->with('success','محصول حذف شد.'); }
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
