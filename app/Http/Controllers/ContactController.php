@@ -1,11 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\ContactMessage;
+use App\Models\StoreSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 class ContactController extends Controller {
- public function index(): View { return view('contact.index',['seoTitle'=>'ارتباط با ما | '.config('app.name'),'seoDescription'=>'برای پرسش، پیشنهاد یا پیگیری با فروشگاه در ارتباط باشید.']); }
+ public function index(): View { return view('contact.index',['seoTitle'=>'ارتباط با ما | '.StoreSetting::current()->store_name,'seoDescription'=>'برای پرسش، پیشنهاد یا پیگیری با فروشگاه در ارتباط باشید.']); }
  public function store(Request $request): RedirectResponse {
   $data=$request->validate([
    'name'=>['required','string','max:120'],
