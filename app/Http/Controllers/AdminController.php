@@ -14,12 +14,14 @@ class AdminController extends Controller {
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
   $data=$this->validatedProduct($request);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
+  if($request->hasFile('model_3d'))$data['model_3d']=$request->file('model_3d')->store('models','public');
   if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
   Product::create($data);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
  }
  public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
  public function updateProduct(Request $request,Product $product) {
   $data=$this->validatedProduct($request,$product);if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
+  if($request->hasFile('model_3d')){if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$data['model_3d']=$request->file('model_3d')->store('models','public');}
   if(empty($data['slug']))$data['slug']=$product->slug;
   $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
@@ -49,7 +51,7 @@ class AdminController extends Controller {
    'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
    'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0'],
-   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],
+   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'model_3d'=>['nullable','file','mimes:glb','max:20480'],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
    'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
   ])+['is_active'=>$request->boolean('is_active'),'is_featured'=>$request->boolean('is_featured')];
