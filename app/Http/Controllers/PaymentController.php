@@ -16,7 +16,7 @@ class PaymentController extends Controller {
    if($order->payment_status!=='paid'&&!$gateway->verify($order))return redirect()->route('home')->withErrors(['payment'=>'تأیید پرداخت از سوی درگاه انجام نشد.']);
    $settled=$fulfillment->deductStock($order);
    if(!$settled)return redirect()->route('home')->withErrors(['payment'=>'پرداخت موفق بود، اما موجودی نیاز به بررسی دستی دارد. با پشتیبانی فروشگاه تماس بگیرید.']);
-   if(!$order->fresh()->sms_sent_at && $sms->sendOrderPaid($order->fresh()))$order->update(['sms_sent_at'=>now()]);
+   $sms->sendOrderPaidOnce($order->fresh());
    session()->forget('cart');
    return redirect()->route('home')->with('success','پرداخت با موفقیت تأیید شد. شماره سفارش: '.$order->order_number);
   } catch(\Throwable $e) {
