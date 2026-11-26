@@ -1,11 +1,40 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'image'=>array_values(array_filter(array_merge($product->image ? [asset('storage/'.$product->image)] : [],array_map(fn($path)=>asset('storage/'.$path),$product->gallery??[])))),'sku'=>$product->sku,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
- ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
- ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
- ['@type'=>'ListItem','position'=>3,'name'=>$product->name,'item'=>url()->current()]
-],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+@php
+$productImages = [];
+if ($product->image) {
+    $productImages[] = asset('storage/'.$product->image);
+}
+foreach (($product->gallery ?? []) as $galleryImage) {
+    $productImages[] = asset('storage/'.$galleryImage);
+}
+$productStructuredData = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Product',
+    'name' => $product->name,
+    'description' => $product->short_description ?: $product->description,
+    'image' => $productImages,
+    'sku' => $product->sku,
+    'offers' => [
+        '@type' => 'Offer',
+        'priceCurrency' => 'IRR',
+        'price' => $product->price * 10,
+        'availability' => $product->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        'url' => url()->current(),
+    ],
+];
+$breadcrumbStructuredData = [
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'خانه', 'item' => route('home')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => 'فروشگاه', 'item' => route('shop')],
+        ['@type' => 'ListItem', 'position' => 3, 'name' => $product->name, 'item' => url()->current()],
+    ],
+];
+@endphp
+<script type="application/ld+json">{!! json_encode($productStructuredData, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script type="application/ld+json">{!! json_encode($breadcrumbStructuredData, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
 @endpush
 @section('content')
 <section class="section-block product-detail"><div class="detail-image">@if($product->model_3d)<div class="product-3d-viewer" role="region" aria-label="نمایش سه‌بعدی محصول؛ برای چرخاندن لمس یا ماوس را حرکت دهید" data-model-url="{{ asset('storage/'.$product->model_3d) }}"></div>@elseif($product->image)<img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">@else<div class="product-placeholder detail-placeholder" data-3d-placeholder="true"><span></span></div>@endif@if($product->gallery)<div class="product-gallery">@foreach($product->gallery as $image)<img src="{{ asset('storage/'.$image) }}" alt="{{ $product->name }} - تصویر {{ $loop->iteration }}" loading="lazy">@endforeach</div>@endif</div>
