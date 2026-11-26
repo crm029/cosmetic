@@ -493,4 +493,14 @@ class HomePageTest extends TestCase
         $this->assertDatabaseMissing('products', ['slug' => 'price-validation-product']);
     }
 
+    public function test_checkout_removes_unavailable_products_from_stale_cart(): void
+    {
+        $product = Product::create(['name' => 'محصول غیرفعال', 'slug' => 'inactive-cart-item', 'price' => 100000, 'stock' => 3, 'is_active' => false]);
+
+        $this->withSession(['cart' => [$product->id => 1]])->get('/checkout')
+            ->assertRedirect('/cart')
+            ->assertSessionHasErrors('cart')
+            ->assertSessionHas('cart', []);
+    }
+
 }
