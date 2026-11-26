@@ -18,7 +18,7 @@ class SmsService {
    ]);
    if(!$response->successful()) { Log::warning('0098SMS HTTP request failed',['status'=>$response->status()]);return false; }
    $body=trim($response->body());
-   if($body===''||$body==='0'||str_starts_with($body,'-')){Log::warning('0098SMS returned a non-success response',['response'=>$body]);return false;}
+   if($body!=='1'&&!preg_match('/^[0-9]{10,}$/',$body)){Log::warning('0098SMS returned an unrecognized or unsuccessful response',['response'=>$body]);return false;}
    return true;
   } catch(\Throwable $e) {
    Log::warning('0098SMS request failed',['exception'=>$e::class]);return false;
