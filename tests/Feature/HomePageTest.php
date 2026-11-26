@@ -154,4 +154,22 @@ class HomePageTest extends TestCase
         Storage::disk('public')->assertExists($category->image);
     }
 
+    public function test_customer_contact_message_is_saved(): void
+    {
+        $this->post('/contact', [
+            'name' => 'مشتری تست',
+            'mobile' => '09123456789',
+            'email' => 'customer@example.test',
+            'subject' => 'پرسش درباره محصول',
+            'message' => 'لطفاً درباره روش استفاده از این محصول راهنمایی کنید.',
+        ])->assertRedirect('/contact');
+
+        $this->assertDatabaseHas('contact_messages', [
+            'name' => 'مشتری تست',
+            'mobile' => '09123456789',
+            'subject' => 'پرسش درباره محصول',
+            'is_read' => false,
+        ]);
+    }
+
 }
