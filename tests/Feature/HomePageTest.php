@@ -310,6 +310,7 @@ class HomePageTest extends TestCase
 
     public function test_admin_can_update_store_settings_and_shipping_policy(): void
     {
+        Storage::fake('public');
         $admin = User::create(['name' => 'مدیر تنظیمات', 'mobile' => '09111111116', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
         $this->actingAs($admin)->get('/admin/settings')->assertOk()->assertSee('تنظیمات فروشگاه');
@@ -324,6 +325,7 @@ class HomePageTest extends TestCase
             'address' => 'تهران، نشانی نمونه',
             'ink_color' => '#29251f',
             'accent_color' => '#a77d6a',
+            'logo' => UploadedFile::fake()->image('store-logo.png'),
         ])->assertRedirect();
 
         $this->assertDatabaseHas('store_settings', [
@@ -332,6 +334,8 @@ class HomePageTest extends TestCase
             'shipping_fee_toman' => 12000,
             'free_shipping_threshold_toman' => 300000,
         ]);
+        $this->assertNotEmpty(StoreSetting::current()->logo_path);
+        Storage::disk('public')->assertExists(StoreSetting::current()->logo_path);
 
         $this->get('/')->assertOk()
             ->assertSee('فروشگاه زیبایی تست')
