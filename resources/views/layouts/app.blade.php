@@ -31,7 +31,11 @@
 
     <header class="site-header">
         <a class="brand" href="{{ route('home') }}">
-            <span class="brand-mark">C</span>
+            @if($storeSettings->logo_path)
+<img class="brand-logo" src="{{ asset('storage/'.$storeSettings->logo_path) }}" alt="{{ $storeSettings->store_name }}">
+@else
+<span class="brand-mark">{{ mb_substr($storeSettings->store_name,0,1) }}</span>
+@endif
             <span>{{ $storeSettings->store_name }}<small>THE BEAUTY EDIT</small></span>
         </a>
         <nav class="main-nav" aria-label="منوی اصلی">
