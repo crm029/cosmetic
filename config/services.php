@@ -10,5 +10,6 @@ return [
   'username'=>env('SMS_USERNAME'),
   'password'=>env('SMS_PASSWORD'),
   'sender'=>env('SMS_SENDER'),
+  'domain'=>env('SMS_DOMAIN','0098'),
  ],
 ];
