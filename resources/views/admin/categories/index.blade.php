@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('content')
+<section class="admin-wrap"><div class="admin-top"><div><span class="eyebrow">COLLECTION MANAGEMENT</span><h1>دسته‌بندی‌ها</h1></div><a class="button button-dark" href="{{ route('admin.categories.create') }}">دسته‌بندی جدید +</a></div>
+@if(session('success'))<p class="notice-success">{{ session('success') }}</p>@endif
+<div class="admin-panel"><div class="admin-table"><div class="admin-row category-admin-head"><span>نام</span><span>نشانی</span><span>ترتیب</span><span>وضعیت</span><span>عملیات</span></div>
+@forelse($categories as $category)<div class="admin-row category-admin-row"><span>{{ $category->name }}</span><span>{{ $category->slug }}</span><span>{{ $category->sort_order }}</span><span>{{ $category->is_active?'فعال':'غیرفعال' }}</span><span class="admin-actions"><a href="{{ route('admin.categories.edit',$category) }}">ویرایش</a><form method="POST" action="{{ route('admin.categories.delete',$category) }}" onsubmit="return confirm('دسته‌بندی حذف شود؟')">@csrf @method('DELETE')<button>حذف</button></form></span></div>@empty<p>دسته‌بندی ثبت نشده است.</p>@endforelse</div><div class="pagination-wrap">{{ $categories->links() }}</div></div><a class="text-link" href="{{ route('admin.dashboard') }}">بازگشت به مدیریت ←</a></section>
+@endsection
