@@ -203,6 +203,8 @@ class HomePageTest extends TestCase
     {
         $this->get('/about')->assertOk()->assertSee('داستان ما');
         $this->get('/faq')->assertOk()->assertSee('چطور سفارش ثبت کنم؟');
+        $this->get('/privacy')->assertOk()->assertSee('حریم خصوصی');
+        $this->get('/terms')->assertOk()->assertSee('قوانین و شرایط خرید');
     }
 
     public function test_product_detail_page_renders_product_and_gallery_schema(): void
@@ -229,7 +231,9 @@ class HomePageTest extends TestCase
             ->assertHeader('Content-Type', 'application/xml')
             ->assertSee('/about', false)
             ->assertSee('/faq', false)
-            ->assertSee('/contact', false);
+            ->assertSee('/contact', false)
+            ->assertSee('/privacy', false)
+            ->assertSee('/terms', false);
     }
 
     public function test_successful_payment_deducts_stock_once_and_sends_confirmation_sms(): void
