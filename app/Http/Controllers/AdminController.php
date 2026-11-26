@@ -14,19 +14,19 @@ class AdminController extends Controller {
  public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
-  $data=$this->validatedProduct($request);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
+  $data=$this->validatedProduct($request);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);if($galleryFiles)$data['gallery']=array_map(fn($file)=>$file->store('products/gallery','public'),$galleryFiles);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
   if($request->hasFile('model_3d'))$data['model_3d']=$request->file('model_3d')->store('models','public');
   if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
   Product::create($data);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
  }
  public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
  public function updateProduct(Request $request,Product $product) {
-  $data=$this->validatedProduct($request,$product);if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
+  $data=$this->validatedProduct($request,$product);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);$gallery=$product->gallery??[];foreach((array)$request->input('remove_gallery',[]) as $index){if(isset($gallery[$index])){Storage::disk('public')->delete($gallery[$index]);unset($gallery[$index]);}}$gallery=array_values($gallery);if(count($gallery)+count($galleryFiles)>8)return back()->withErrors(['gallery_images'=>'هر محصول حداکثر ۸ تصویر گالری می‌تواند داشته باشد.'])->withInput();foreach($galleryFiles as $file)$gallery[]=$file->store('products/gallery','public');if($gallery!==($product->gallery??[]))$data['gallery']=$gallery;if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
   if($request->hasFile('model_3d')){if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$data['model_3d']=$request->file('model_3d')->store('models','public');}
   if(empty($data['slug']))$data['slug']=$product->slug;
   $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
- public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$product->delete();return back()->with('success','محصول حذف شد.'); }
+ public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);foreach($product->gallery??[] as $image)Storage::disk('public')->delete($image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$product->delete();return back()->with('success','محصول حذف شد.'); }
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
  public function storeCategory(Request $request) {
@@ -57,7 +57,7 @@ class AdminController extends Controller {
    'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
    'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0'],
-   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'model_3d'=>['nullable','file','mimes:glb','max:20480'],
+   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'model_3d'=>['nullable','file','mimes:glb','max:20480'],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
    'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
   ])+['is_active'=>$request->boolean('is_active'),'is_featured'=>$request->boolean('is_featured')];
