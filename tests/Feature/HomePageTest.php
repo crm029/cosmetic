@@ -1,6 +1,6 @@
 <?php
-namespace Tests\\Feature;
-use Tests\\TestCase;
+namespace Tests\Feature;
+use Tests\TestCase;
 class HomePageTest extends TestCase {
  public function test_homepage_returns_successful_response(): void {
   $this->get('/')->assertOk()->assertSee('زیبایی');
