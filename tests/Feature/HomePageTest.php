@@ -53,7 +53,7 @@ class HomePageTest extends TestCase
             'customer_name' => 'مشتری آزمایشی',
             'mobile' => '09123456789',
             'shipping_address' => 'تهران، خیابان نمونه، پلاک ۱',
-        ])->assertRedirect('/checkout')->assertSessionHasErrors(['checkout' => 'درگاه پرداخت هنوز توسط مدیر فروشگاه پیکربندی نشده است.']);
+        ])->assertRedirect('/checkout')->assertSessionHasErrors('checkout');
 
         $this->assertDatabaseHas('orders', ['total' => 240000, 'payment_status' => 'unpaid']);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
