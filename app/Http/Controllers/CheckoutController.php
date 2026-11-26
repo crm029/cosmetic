@@ -6,15 +6,25 @@ use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Services\ZarinpalService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
 class CheckoutController extends Controller {
- public function index(Request $request): View {
-  $cart=$request->session()->get('cart',[]);abort_if(empty($cart),redirect()->route('cart.index'));
-  $products=Product::whereIn('id',array_keys($cart))->where('is_active',true)->get();$subtotal=0;
-  foreach($products as $p)$subtotal+=$p->price*(int)$cart[$p->id];
+ public function index(Request $request): View|RedirectResponse {
+  $cart=$request->session()->get('cart',[]);
+  if(empty($cart))return redirect()->route('cart.index');
+  $products=Product::whereIn('id',array_keys($cart))->where('is_active',true)->get();$subtotal=0;$validCart=[];
+  foreach($products as $p){
+   $quantity=(int)($cart[$p->id]??0);
+   if($quantity<1)continue;
+   if($quantity>$p->stock)return redirect()->route('cart.index')->withErrors(['cart'=>'موجودی '.$p->name.' برای تعداد انتخاب‌شده کافی نیست.']);
+   $validCart[$p->id]=$quantity;$subtotal+=$p->price*$quantity;
+  }
+  if(count($validCart)!==count($cart))$request->session()->put('cart',$validCart);
+  $cart=$validCart;
+  if(empty($cart))return redirect()->route('cart.index')->withErrors(['cart'=>'محصولات سبد خرید دیگر در دسترس نیستند.']);
   $settings=StoreSetting::current();$fee=$settings->shipping_fee_toman;$threshold=$settings->free_shipping_threshold_toman;
   $shipping=($threshold>0&&$subtotal>=$threshold)?0:$fee;$total=$subtotal+$shipping;
   return view('checkout.index',compact('products','cart','subtotal','shipping','total'));
