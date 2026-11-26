@@ -565,6 +565,64 @@ class HomePageTest extends TestCase
             ->assertSee('+4');
     }
 
+    public function test_paid_order_with_one_insufficient_item_does_not_deduct_any_other_item(): void
+    {
+        $available = Product::create(['name' => 'محصول موجود', 'slug' => 'available-item-atomic', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
+        $short = Product::create(['name' => 'محصول کمبود', 'slug' => 'short-item-atomic', 'price' => 70000, 'stock' => 1, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-ATOMIC-STOCK-01',
+            'customer_name' => 'مشتری اتمیک',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 190000,
+            'shipping_amount' => 0,
+            'total' => 190000,
+            'status' => 'pending',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $available->id, 'product_name' => $available->name, 'unit_price' => 50000, 'quantity' => 2, 'line_total' => 100000]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $short->id, 'product_name' => $short->name, 'unit_price' => 90000, 'quantity' => 1, 'line_total' => 90000]);
+
+        $this->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
+
+        $this->assertDatabaseHas('products', ['id' => $available->id, 'stock' => 5]);
+        $this->assertDatabaseHas('products', ['id' => $short->id, 'stock' => 1]);
+        $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'paid_stock_issue']);
+    }
+
+    public function test_duplicate_order_lines_are_aggregated_before_stock_deduction(): void
+    {
+        $product = Product::create(['name' => 'محصول چندردیفه', 'slug' => 'duplicate-lines-item', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-DUPLICATE-LINES-01',
+            'customer_name' => 'مشتری چندردیفه',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'pending',
+            'payment_status' => 'paid',
+        ]);
+        foreach ([2, 2] as $quantity) {
+            OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 50000, 'quantity' => $quantity, 'line_total' => 100000]);
+        }
+
+        $this->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'order_id' => $order->id,
+            'type' => 'sale',
+            'quantity' => -4,
+            'previous_stock' => 5,
+            'new_stock' => 1,
+        ]);
+        $this->assertSame(1, StockMovement::where('order_id', $order->id)->where('type', 'sale')->count());
+    }
+
     public function test_admin_can_filter_low_stock_products_and_dashboard_counts_them(): void
     {
         $admin = User::create(['name' => 'مدیر انبار', 'mobile' => '09111111123', 'password' => 'a-secure-test-password', 'is_admin' => true]);
