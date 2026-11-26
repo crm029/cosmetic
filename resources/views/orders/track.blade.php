@@ -8,7 +8,8 @@
 <label>شماره موبایل<input name="mobile" value="{{ old('mobile') }}" inputmode="numeric" placeholder="09xxxxxxxxx" required></label>
 <button class="button button-dark" type="submit">پیگیری سفارش ←</button></form>
 @if($order)
-<div class="tracking-result"><span class="eyebrow">ORDER {{ $order->order_number }}</span><h2>{{ $order->customer_name }}</h2><p>وضعیت سفارش: <strong>{{ ['pending'=>'در انتظار پرداخت','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده','paid_stock_issue'=>'نیازمند بررسی پشتیبانی'][$order->status] ?? $order->status }}</strong></p><p>وضعیت پرداخت: {{ $order->payment_status==='paid'?'پرداخت‌شده':'پرداخت‌نشده' }}</p><p>مبلغ سفارش: {{ number_format($order->total) }} تومان</p>
+<div class="tracking-result"><span class="eyebrow">ORDER {{ $order->order_number }}</span><h2>{{ $order->customer_name }}</h2><p>وضعیت سفارش: <strong>{{ ['pending'=>'در انتظار پرداخت','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده','paid_stock_issue'=>'نیازمند بررسی پشتیبانی','refund_required'=>'پرداخت موفق؛ بازپرداخت در حال بررسی'][$order->status] ?? $order->status }}</strong></p><p>وضعیت پرداخت: {{ $order->payment_status==='paid'?'پرداخت‌شده':'پرداخت‌نشده' }}</p>
+@if($order->status==='refund_required')<p class="notice-error">پرداخت شما موفق بوده، اما سفارش پیش از تأیید نهایی لغو شده است. برای پیگیری بازپرداخت با پشتیبانی فروشگاه تماس بگیرید.</p>@endif<p>مبلغ سفارش: {{ number_format($order->total) }} تومان</p>
 @if($order->payment_status!=='paid' && $order->status!=='cancelled')
 <form method="POST" action="{{ route('orders.pay.retry',$order) }}" class="retry-payment-form">
 @csrf
