@@ -4,10 +4,12 @@
 <div class="admin-top"><div><span class="eyebrow">STORE CONFIGURATION</span><h1>تنظیمات فروشگاه</h1></div><a class="text-link" href="{{ route('admin.dashboard') }}">بازگشت به مدیریت ←</a></div>
 @if(session('success'))<p class="notice-success">{{ session('success') }}</p>@endif
 @if($errors->any())<div class="notice-error">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
-<form class="admin-form settings-form" method="POST" action="{{ route('admin.settings.update') }}">@csrf @method('PUT')
+<form class="admin-form settings-form" method="POST" enctype="multipart/form-data" action="{{ route('admin.settings.update') }}">@csrf @method('PUT')
 <h3>مشخصات فروشگاه</h3>
 <label>نام فروشگاه<input name="store_name" value="{{ old('store_name',$settings->store_name) }}" maxlength="150" required></label>
 <label>شعار کوتاه فروشگاه<input name="tagline" value="{{ old('tagline',$settings->tagline) }}" maxlength="255"></label>
+<label class="full-field">لوگوی فروشگاه (حداکثر ۲ مگابایت)<input type="file" name="logo" accept="image/jpeg,image/png,image/webp,image/avif"></label>
+@if($settings->logo_path)<img class="settings-logo-preview" src="{{ asset('storage/'.$settings->logo_path) }}" alt="{{ $settings->store_name }}">@endif
 <label>شماره پشتیبانی<input name="support_mobile" value="{{ old('support_mobile',$settings->support_mobile) }}" placeholder="09xxxxxxxxx"></label>
 <label>ایمیل پشتیبانی<input type="email" name="support_email" value="{{ old('support_email',$settings->support_email) }}"></label>
 <label class="full-field">نشانی فروشگاه<textarea name="address" rows="3">{{ old('address',$settings->address) }}</textarea></label>
