@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\StoreSetting;
 use App\Services\ZarinpalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ class CheckoutController extends Controller {
   $cart=$request->session()->get('cart',[]);abort_if(empty($cart),redirect()->route('cart.index'));
   $products=Product::whereIn('id',array_keys($cart))->where('is_active',true)->get();$subtotal=0;
   foreach($products as $p)$subtotal+=$p->price*(int)$cart[$p->id];
-  $fee=(int)config('store.shipping_fee_toman',0);$threshold=(int)config('store.free_shipping_threshold_toman',0);
+  $settings=StoreSetting::current();$fee=$settings->shipping_fee_toman;$threshold=$settings->free_shipping_threshold_toman;
   $shipping=($threshold>0&&$subtotal>=$threshold)?0:$fee;$total=$subtotal+$shipping;
   return view('checkout.index',compact('products','cart','subtotal','shipping','total'));
  }
@@ -28,7 +29,7 @@ class CheckoutController extends Controller {
     if($products->count()!==count($cart))throw new RuntimeException('یکی از محصولات دیگر در دسترس نیست.');
     $subtotal=0;
     foreach($products as $p){$qty=(int)$cart[$p->id];if($qty<1||$qty>$p->stock)throw new RuntimeException('موجودی '.$p->name.' کافی نیست.');$subtotal+=$p->price*$qty;}
-    $fee=(int)config('store.shipping_fee_toman',0);$threshold=(int)config('store.free_shipping_threshold_toman',0);
+    $settings=StoreSetting::current();$fee=$settings->shipping_fee_toman;$threshold=$settings->free_shipping_threshold_toman;
     $shipping=($threshold>0&&$subtotal>=$threshold)?0:$fee;$total=$subtotal+$shipping;
     $created=Order::create(['order_number'=>'CS-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),'customer_name'=>$data['customer_name'],'mobile'=>$data['mobile'],'email'=>$data['email']??null,'shipping_address'=>$data['shipping_address'],'subtotal'=>$subtotal,'shipping_amount'=>$shipping,'total'=>$total,'status'=>'pending','payment_status'=>'unpaid','notes'=>$data['notes']??null]);
     foreach($products as $p){$qty=(int)$cart[$p->id];OrderItem::create(['order_id'=>$created->id,'product_id'=>$p->id,'product_name'=>$p->name,'unit_price'=>$p->price,'quantity'=>$qty,'line_total'=>$p->price*$qty]);}
