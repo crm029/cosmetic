@@ -2,6 +2,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -49,5 +50,23 @@ class HomePageTest extends TestCase
 
         $this->assertDatabaseHas('orders', ['total' => 240000, 'payment_status' => 'unpaid']);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
+    }
+
+    public function test_customer_can_track_order_with_order_number_and_mobile(): void
+    {
+        $order = Order::create([
+            'order_number' => 'CS-261126-ABC123',
+            'customer_name' => 'مشتری آزمایشی',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 150000,
+            'shipping_amount' => 0,
+            'total' => 150000,
+        ]);
+
+        $this->post('/order/track', [
+            'order_number' => $order->order_number,
+            'mobile' => '09123456789',
+        ])->assertOk()->assertSee($order->order_number);
     }
 }
