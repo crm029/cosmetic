@@ -593,4 +593,113 @@ class HomePageTest extends TestCase
             ->assertSee('سفارش‌های پرداخت‌نشده');
     }
 
+
+    public function test_successful_payment_with_insufficient_stock_is_flagged_without_partial_deduction(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987655]], 200),
+        ]);
+
+        $product = Product::create(['name' => 'محصول ناموجود', 'slug' => 'insufficient-stock-product', 'price' => 100000, 'stock' => 1, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-STOCK02',
+            'customer_name' => 'مشتری پرداخت‌شده',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'A000000000000000000000000000003',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 2, 'line_total' => 200000]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')
+            ->assertRedirect('/')
+            ->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'status' => 'paid_stock_issue']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+        $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
+    }
+
+    public function test_sms_failure_does_not_reverse_a_successful_payment_or_stock_deduction(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+            'services.0098sms.base_url' => 'https://sms.test/send',
+            'services.0098sms.username' => 'test-user',
+            'services.0098sms.password' => 'test-password',
+            'services.0098sms.sender' => '10001000',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987656]], 200),
+            'sms.test/*' => Http::response('service unavailable', 503),
+        ]);
+
+        $product = Product::create(['name' => 'محصول پیامک', 'slug' => 'sms-failure-product', 'price' => 80000, 'stock' => 4, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-SMS001',
+            'customer_name' => 'مشتری پیامک',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 160000,
+            'shipping_amount' => 0,
+            'total' => 160000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'A000000000000000000000000000004',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 80000, 'quantity' => 2, 'line_total' => 160000]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'paid', 'status' => 'processing']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
+        $this->assertNull($order->fresh()->sms_sent_at);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')->assertRedirect('/');
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
+        $this->assertNull($order->fresh()->sms_sent_at);
+    }
+
+    public function test_failed_gateway_verification_never_deducts_stock(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['data' => ['code' => -9]], 200),
+        ]);
+
+        $product = Product::create(['name' => 'محصول ناموفق', 'slug' => 'failed-payment-product', 'price' => 90000, 'stock' => 3, 'is_active' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-FAIL001',
+            'customer_name' => 'مشتری ناموفق',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 90000,
+            'shipping_amount' => 0,
+            'total' => 90000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'A000000000000000000000000000005',
+        ]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 90000, 'quantity' => 1, 'line_total' => 90000]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=OK')
+            ->assertRedirect('/')
+            ->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'unpaid', 'status' => 'pending']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+        $this->assertDatabaseMissing('stock_movements', ['order_id' => $order->id, 'type' => 'sale']);
+    }
+
 }
