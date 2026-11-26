@@ -7,6 +7,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrderTrackingController;
+use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Route;
 Route::get('/',[HomeController::class,'index'])->name('home');
 Route::get('/shop',[ProductController::class,'index'])->name('shop');
@@ -19,6 +20,8 @@ Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.re
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
 Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
+Route::get('/contact',[ContactController::class,'index'])->name('contact.index');
+Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
 Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:5,1')->name('orders.track.lookup');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
@@ -33,6 +36,8 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::get('/categories/{category}/edit',[AdminController::class,'editCategory'])->name('categories.edit');
  Route::put('/categories/{category}',[AdminController::class,'updateCategory'])->name('categories.update');
  Route::delete('/categories/{category}',[AdminController::class,'deleteCategory'])->name('categories.delete');
+ Route::get('/messages',[AdminController::class,'messages'])->name('messages');
+ Route::patch('/messages/{message}/read',[AdminController::class,'markMessageRead'])->name('messages.read');
  Route::get('/orders',[AdminController::class,'orders'])->name('orders');
  Route::get('/orders/{order}',[AdminController::class,'showOrder'])->name('orders.show');
  Route::patch('/orders/{order}',[AdminController::class,'updateOrderStatus'])->name('orders.update');
