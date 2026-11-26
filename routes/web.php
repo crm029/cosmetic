@@ -20,6 +20,8 @@ Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.re
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
 Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
+Route::view('/about','pages.about',['seoTitle'=>'درباره ما | '.config('app.name'),'seoDescription'=>'با داستان و رویکرد فروشگاه محصولات زیبایی آشنا شوید.'])->name('about');
+Route::view('/faq','pages.faq',['seoTitle'=>'پرسش‌های متداول | '.config('app.name'),'seoDescription'=>'پاسخ پرسش‌های رایج درباره خرید، پرداخت و پیگیری سفارش.'])->name('faq');
 Route::get('/contact',[ContactController::class,'index'])->name('contact.index');
 Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
