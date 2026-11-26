@@ -75,13 +75,13 @@ class AdminController extends Controller {
  public function messages(): View { return view('admin.messages.index',['messages'=>ContactMessage::latest()->paginate(25)]); }
  public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
  public function orders(Request $request): View {
-  $filters=$request->validate(['q'=>['nullable','string','max:100'],'status'=>['nullable','in:pending,processing,shipped,delivered,cancelled,paid_stock_issue'],'payment_status'=>['nullable','in:unpaid,paid,failed,refunded']]);
+  $filters=$request->validate(['q'=>['nullable','string','max:100'],'status'=>['nullable','in:pending,processing,shipped,delivered,cancelled,paid_stock_issue,refund_required'],'payment_status'=>['nullable','in:unpaid,paid,failed,refunded']]);
   $orders=Order::when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('order_number','like',$term)->orWhere('customer_name','like',$term)->orWhere('mobile','like',$term);});})->when(!empty($filters['status']),fn($q)=>$q->where('status',$filters['status']))->when(!empty($filters['payment_status']),fn($q)=>$q->where('payment_status',$filters['payment_status']))->latest()->paginate(25)->withQueryString();
   return view('admin.orders.index',compact('orders'));
  }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,SmsService $sms) {
-  if($order->payment_status!=='paid')return back()->withErrors(['stock'=>'فقط سفارش پرداخت‌شده قابل بررسی مجدد است.']);
+  if($order->payment_status!=='paid'||$order->status==='refund_required'||$order->status==='cancelled')return back()->withErrors(['stock'=>'این سفارش برای بازپرداخت علامت‌گذاری شده یا قابل آماده‌سازی نیست.']);
   if(!$fulfillment->deductStock($order))return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
   $sms->sendOrderPaidOnce($order->fresh());
   return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
@@ -90,7 +90,7 @@ class AdminController extends Controller {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled'],'shipping_carrier'=>['nullable','string','max:100'],'tracking_code'=>['nullable','string','max:120']]);
   $error=DB::transaction(function()use($order,$data){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
-   if($locked->status==='cancelled'&&$data['status']!=='cancelled')return 'سفارش لغوشده قابل فعال‌سازی مجدد نیست.';
+   if(in_array($locked->status,['cancelled','refund_required'],true)&&$data['status']!==$locked->status)return 'سفارش لغوشده یا نیازمند بازپرداخت قابل فعال‌سازی مجدد نیست.';
    if($locked->status==='paid_stock_issue'&&!$locked->stock_deducted_at)return 'ابتدا مشکل موجودی را از طریق گزینه تلاش مجدد برای کسر موجودی برطرف کنید.';
    if($locked->payment_status==='paid'&&$data['status']==='cancelled')return 'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.';
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
