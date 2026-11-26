@@ -17,7 +17,7 @@ class ZarinpalService {
   return 'https://www.zarinpal.com/pg/StartPay/'.$response['data']['authority'];
  }
  public function verify(Order $order): bool {
-  $merchant=env('ZARINPAL_MERCHANT_ID');if(!$merchant||!$order->payment_authority)return false;
+  $merchant=config('services.zarinpal.merchant_id');if(!$merchant||!$order->payment_authority)return false;
   $response=Http::acceptJson()->asJson()->timeout(20)->post($this->baseUrl().'/verify.json',[
    'merchant_id'=>$merchant,'amount'=>$order->total*10,'authority'=>$order->payment_authority
   ])->throw()->json();
