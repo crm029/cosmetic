@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Order;
+use App\Services\ZarinpalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,5 +12,12 @@ class OrderTrackingController extends Controller {
   $order=Order::with('items')->where('order_number',strtoupper(trim($data['order_number'])))->where('mobile',$data['mobile'])->first();
   if(!$order)return back()->withErrors(['tracking'=>'سفارشی با این شماره و موبایل پیدا نشد.'])->withInput();
   return view('orders.track',compact('order'));
+ }
+ public function retryPayment(Request $request,Order $order,ZarinpalService $gateway): RedirectResponse {
+  $data=$request->validate(['order_number'=>['required','string','max:40'],'mobile'=>['required','regex:/^09[0-9]{9}$/']]);
+  if(!hash_equals($order->order_number,strtoupper(trim($data['order_number'])))||!hash_equals($order->mobile,$data['mobile']))abort(404);
+  if($order->payment_status==='paid'||$order->status==='cancelled')return back()->withErrors(['payment'=>'این سفارش امکان پرداخت مجدد ندارد.']);
+  try { return redirect()->away($gateway->requestPayment($order)); }
+  catch(\Throwable $e) { report($e);return back()->withErrors(['payment'=>'ساخت لینک پرداخت ناموفق بود. کمی بعد دوباره تلاش کنید.']); }
  }
 }
