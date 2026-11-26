@@ -567,6 +567,8 @@ class HomePageTest extends TestCase
 
     public function test_paid_order_with_one_insufficient_item_does_not_deduct_any_other_item(): void
     {
+        $admin = User::create(['name' => 'مدیر تست اتمیک', 'mobile' => '09111111201', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $this->actingAs($admin);
         $available = Product::create(['name' => 'محصول موجود', 'slug' => 'available-item-atomic', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
         $short = Product::create(['name' => 'محصول کمبود', 'slug' => 'short-item-atomic', 'price' => 70000, 'stock' => 1, 'is_active' => true]);
         $order = Order::create([
@@ -593,6 +595,8 @@ class HomePageTest extends TestCase
 
     public function test_duplicate_order_lines_are_aggregated_before_stock_deduction(): void
     {
+        $admin = User::create(['name' => 'مدیر تست چندردیفه', 'mobile' => '09111111202', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $this->actingAs($admin);
         $product = Product::create(['name' => 'محصول چندردیفه', 'slug' => 'duplicate-lines-item', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
         $order = Order::create([
             'order_number' => 'CS-DUPLICATE-LINES-01',
