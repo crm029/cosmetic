@@ -576,14 +576,14 @@ class HomePageTest extends TestCase
             'customer_name' => 'مشتری اتمیک',
             'mobile' => '09123456789',
             'shipping_address' => 'تهران، نشانی تست',
-            'subtotal' => 190000,
+            'subtotal' => 240000,
             'shipping_amount' => 0,
-            'total' => 190000,
+            'total' => 240000,
             'status' => 'pending',
             'payment_status' => 'paid',
         ]);
         OrderItem::create(['order_id' => $order->id, 'product_id' => $available->id, 'product_name' => $available->name, 'unit_price' => 50000, 'quantity' => 2, 'line_total' => 100000]);
-        OrderItem::create(['order_id' => $order->id, 'product_id' => $short->id, 'product_name' => $short->name, 'unit_price' => 90000, 'quantity' => 1, 'line_total' => 90000]);
+        OrderItem::create(['order_id' => $order->id, 'product_id' => $short->id, 'product_name' => $short->name, 'unit_price' => 70000, 'quantity' => 2, 'line_total' => 140000]);
 
         $this->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
 
