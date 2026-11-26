@@ -5,11 +5,12 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 class AdminController extends Controller {
- public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orders'=>Order::latest()->take(8)->get()]); }
+ public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orderCount'=>Order::count(),'orders'=>Order::latest()->take(8)->get()]); }
  public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
@@ -42,7 +43,10 @@ class AdminController extends Controller {
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function updateOrderStatus(Request $request,Order $order) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled']]);
-  $order->update(['status'=>$data['status']]);return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
+  if($data['status']==='cancelled' && $order->payment_status==='paid')return back()->withErrors(['status'=>'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.']);
+  if(in_array($data['status'],['processing','shipped','delivered'],true) && ($order->payment_status!=='paid'||!$order->stock_deducted_at))return back()->withErrors(['status'=>'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.']);
+  DB::transaction(function()use($order,$data){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked->payment_status==='paid'&&$data['status']==='cancelled')throw new \RuntimeException('سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.');$locked->update(['status'=>$data['status']]);});
+  return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
  private function validatedProduct(Request $request,?Product $product=null): array {
   return $request->validate([
