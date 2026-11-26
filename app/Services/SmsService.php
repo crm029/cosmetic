@@ -6,14 +6,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 class SmsService {
  private function send(Order $order,string $message): bool {
-  $url=config('services.0098sms.base_url');$username=config('services.0098sms.username');$password=config('services.0098sms.password');$sender=config('services.0098sms.sender');
-  if(!$url||!$username||!$password||!$sender)return false;
+  $url=config('services.0098sms.base_url');$username=config('services.0098sms.username');$password=config('services.0098sms.password');$sender=config('services.0098sms.sender');$domain=config('services.0098sms.domain','0098');
+  if(!$url||!$username||!$password||!$sender||!$domain)return false;
   if(!str_starts_with($url,'https://')){Log::warning('0098SMS endpoint must use HTTPS.');return false;}
   try {
-   $response=Http::timeout(15)->get($url,['username'=>$username,'password'=>$password,'from'=>$sender,'to'=>$order->mobile,'text'=>$message]);
+   $response=Http::timeout(15)->get($url,['FROM'=>$sender,'TO'=>$order->mobile,'TEXT'=>$message,'USERNAME'=>$username,'PASSWORD'=>$password,'DOMAIN'=>$domain]);
    if(!$response->successful()){Log::warning('0098SMS HTTP request failed',['status'=>$response->status()]);return false;}
    $body=trim($response->body());
-   if($body!=='1'&&!preg_match('/^[0-9]{10,}$/',$body)){Log::warning('0098SMS returned an unrecognized or unsuccessful response',['response'=>$body]);return false;}
+   if($body!=='0'){Log::warning('0098SMS returned an unrecognized or unsuccessful response',['response'=>$body]);return false;}
    return true;
   } catch(\Throwable $e) {
    Log::warning('0098SMS request failed',['exception'=>$e::class]);return false;
