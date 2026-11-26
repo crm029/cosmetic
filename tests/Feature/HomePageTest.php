@@ -414,4 +414,33 @@ class HomePageTest extends TestCase
             ->assertDontSee('CS-UNPAID-FILTER');
     }
 
+    public function test_admin_can_add_shipment_tracking_and_customer_can_view_it(): void
+    {
+        $admin = User::create(['name' => 'مدیر ارسال', 'mobile' => '09111111120', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-SHIP-TRACK01',
+            'customer_name' => 'مشتری ارسال',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+            'stock_deducted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, [
+            'status' => 'shipped',
+            'shipping_carrier' => 'پست پیشتاز',
+            'tracking_code' => '123456789012345',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'shipped', 'tracking_code' => '123456789012345']);
+        $this->post('/order/track', ['order_number' => $order->order_number, 'mobile' => '09123456789'])
+            ->assertOk()
+            ->assertSee('123456789012345')
+            ->assertSee('پست پیشتاز');
+    }
+
 }
