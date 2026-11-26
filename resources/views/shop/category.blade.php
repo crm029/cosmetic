@@ -1,6 +1,11 @@
 @extends('layouts.app')
 @push('head')
 <script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'CollectionPage','name'=>$category->name,'description'=>$category->seo_description ?: $category->description,'url'=>url()->current()],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
+ ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
+ ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
+ ['@type'=>'ListItem','position'=>3,'name'=>$category->name,'item'=>url()->current()]
+],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
 @endpush
 @section('content')
 <section class="page-intro"><span class="eyebrow">THE COLLECTION</span><h1>{{ $category->name }}</h1><p>{{ $category->description ?: 'انتخاب‌هایی برای روتین مراقبت روزانه تو.' }}</p>@if($category->image)
