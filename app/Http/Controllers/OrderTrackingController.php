@@ -16,7 +16,7 @@ class OrderTrackingController extends Controller {
  public function retryPayment(Request $request,Order $order,ZarinpalService $gateway): RedirectResponse {
   $data=$request->validate(['order_number'=>['required','string','max:40'],'mobile'=>['required','regex:/^09[0-9]{9}$/']]);
   if(!hash_equals($order->order_number,strtoupper(trim($data['order_number'])))||!hash_equals($order->mobile,$data['mobile']))abort(404);
-  if($order->payment_status==='paid'||$order->status==='cancelled')return back()->withErrors(['payment'=>'این سفارش امکان پرداخت مجدد ندارد.']);
+  if(in_array($order->payment_status,['paid','refunded'],true)||in_array($order->status,['cancelled','refund_required','paid_stock_issue'],true))return back()->withErrors(['payment'=>'این سفارش امکان پرداخت مجدد ندارد.']);
   try { return redirect()->away($gateway->requestPayment($order)); }
   catch(\Throwable $e) { report($e);return back()->withErrors(['payment'=>'ساخت لینک پرداخت ناموفق بود. کمی بعد دوباره تلاش کنید.']); }
  }
