@@ -27,6 +27,7 @@ class HomePageTest extends TestCase
             'services.0098sms.username' => 'test-user',
             'services.0098sms.password' => 'test-password',
             'services.0098sms.sender' => '1000',
+            'services.0098sms.domain' => '0098',
         ]);
         Http::fake(['sms.example.test/*' => Http::response('0', 200)]);
         $order = Order::create([
@@ -46,8 +47,46 @@ class HomePageTest extends TestCase
         $this->assertFalse($sms->sendOrderPaidOnce($order->fresh()));
 
         Http::assertSentCount(1);
+        Http::assertSent(function ($request) use ($order) {
+            return $request->url() === 'https://sms.example.test/send'
+                && $request['FROM'] === '1000'
+                && $request['TO'] === $order->mobile
+                && $request['TEXT'] !== ''
+                && $request['USERNAME'] === 'test-user'
+                && $request['PASSWORD'] === 'test-password'
+                && $request['DOMAIN'] === '0098';
+        });
         $this->assertNotNull($order->fresh()->sms_sent_at);
         $this->assertNull($order->fresh()->sms_claimed_at);
+    }
+
+
+    public function test_0098sms_error_code_is_not_treated_as_success(): void
+    {
+        config([
+            'services.0098sms.base_url' => 'https://sms.example.test/send',
+            'services.0098sms.username' => 'test-user',
+            'services.0098sms.password' => 'test-password',
+            'services.0098sms.sender' => '1000',
+            'services.0098sms.domain' => '0098',
+        ]);
+        Http::fake(['sms.example.test/*' => Http::response('9', 200)]);
+        $order = Order::create([
+            'order_number' => 'CS-SMS-ERROR-01',
+            'customer_name' => 'مشتری خطای پیامک',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->assertFalse(app(SmsService::class)->sendOrderPaidOnce($order));
+        $this->assertNull($order->fresh()->sms_sent_at);
+        $this->assertNull($order->fresh()->sms_claimed_at);
+        Http::assertSentCount(1);
     }
 
     public function test_homepage_returns_successful_response(): void
