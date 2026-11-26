@@ -18,6 +18,8 @@ Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.re
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
 Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
+Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
+Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:5,1')->name('orders.track.lookup');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
