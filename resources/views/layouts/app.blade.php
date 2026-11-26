@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $seoTitle ?? config('app.name') }}</title><meta name="description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی و مراقبت پوست و مو.' }}"><meta name="robots" content="index,follow"><link rel="canonical" href="{{ request()->url() }}"><meta name="theme-color" content="#f4eee8">
+<title>{{ $seoTitle ?? config('app.name') }}</title><meta name="description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی و مراقبت پوست و مو.' }}">@php($noIndex = request()->routeIs('cart.*','checkout.*','admin.*') || (request()->routeIs('shop') && (request()->filled('q') || request()->filled('category'))))
+<meta name="robots" content="{{ $noIndex ? 'noindex,nofollow' : 'index,follow' }}"><link rel="canonical" href="{{ isset($product) && $product->canonical_url ? $product->canonical_url : request()->url() }}"><meta name="theme-color" content="#f4eee8">
 <meta property="og:type" content="website"><meta property="og:title" content="{{ $seoTitle ?? config('app.name') }}"><meta property="og:description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی.' }}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="{{ asset('assets/css/store.css') }}">@stack('head')</head><body>
 <div class="announcement">زیبایی، از جزئیات آغاز می‌شود <span>✦</span> تجربه‌ای تازه در مراقبت روزانه</div>
