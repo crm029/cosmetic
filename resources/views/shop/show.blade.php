@@ -31,7 +31,13 @@
         <span class="eyebrow">{{ $product->category?->name ?? 'THE BEAUTY EDIT' }}</span>
         <h1>{{ $product->name }}</h1>
         <p>{{ $product->short_description }}</p>
-        <strong class="detail-price">{{ number_format($product->price) }} تومان</strong>
+        <div class="product-detail-price">
+            @if($product->compare_price && $product->compare_price > $product->price)
+                <del>{{ number_format($product->compare_price) }} تومان</del>
+                <span class="sale-badge">پیشنهاد ویژه</span>
+            @endif
+            <strong class="detail-price">{{ number_format($product->price) }} تومان</strong>
+        </div>
         <p class="stock-note">{{ $product->stock > 0 ? 'موجود در فروشگاه' : 'در حال حاضر ناموجود' }}</p>
 
         @if($product->stock > 0)
