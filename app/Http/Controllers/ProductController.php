@@ -36,7 +36,8 @@ class ProductController extends Controller {
   $images=[];
   if($product->image)$images[]=asset('storage/'.$product->image);
   foreach($product->gallery??[] as $image)$images[]=asset('storage/'.$image);
-  $productSchema=['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'image'=>$images,'sku'=>$product->sku,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]];
+  $productSchema=['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'sku'=>$product->sku,'category'=>$product->category?->name,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]];
+  if($images)$productSchema['image']=$images;
   $breadcrumbSchema=['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
    ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
    ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
