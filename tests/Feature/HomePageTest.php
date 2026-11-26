@@ -28,7 +28,7 @@ class HomePageTest extends TestCase
             'services.0098sms.password' => 'test-password',
             'services.0098sms.sender' => '1000',
         ]);
-        Http::fake(['sms.example.test/*' => Http::response('1', 200)]);
+        Http::fake(['sms.example.test/*' => Http::response('0', 200)]);
         $order = Order::create([
             'order_number' => 'CS-SMS-ONCE-01',
             'customer_name' => 'مشتری پیامک',
@@ -295,7 +295,7 @@ class HomePageTest extends TestCase
         ]);
         Http::fake([
             'api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 987654]], 200),
-            'sms.test/*' => Http::response('1', 200),
+            'sms.test/*' => Http::response('0', 200),
         ]);
 
         $product = Product::create(['name' => 'محصول پرداخت', 'slug' => 'paid-product', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
@@ -496,7 +496,7 @@ class HomePageTest extends TestCase
     public function test_admin_can_add_shipment_tracking_and_customer_can_view_it(): void
     {
         config(['services.0098sms.base_url'=>'https://sms.test/send','services.0098sms.username'=>'test-user','services.0098sms.password'=>'test-password','services.0098sms.sender'=>'10001000']);
-        Http::fake(['sms.test/*'=>Http::response('1',200)]);
+        Http::fake(['sms.test/*'=>Http::response('0',200)]);
         $admin = User::create(['name' => 'مدیر ارسال', 'mobile' => '09111111120', 'password' => 'a-secure-test-password', 'is_admin' => true]);
         $order = Order::create([
             'order_number' => 'CS-SHIP-TRACK01',
