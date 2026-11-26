@@ -72,7 +72,7 @@ class AdminController extends Controller {
   $fresh=$order->fresh();if(!$fresh->sms_sent_at&&$sms->sendOrderPaid($fresh))$fresh->update(['sms_sent_at'=>now()]);
   return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
- public function updateOrderStatus(Request $request,Order $order) {
+ public function updateOrderStatus(Request $request,Order $order,SmsService $sms) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled'],'shipping_carrier'=>['nullable','string','max:100'],'tracking_code'=>['nullable','string','max:120']]);
   $error=DB::transaction(function()use($order,$data){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
@@ -85,6 +85,7 @@ class AdminController extends Controller {
    $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];$locked->update($changes);return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
+  if($data['status']==='shipped'){$fresh=$order->fresh();if(!$fresh->shipment_sms_sent_at&&$sms->sendShipmentUpdate($fresh))$fresh->update(['shipment_sms_sent_at'=>now()]);}
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
  private function validatedProduct(Request $request,?Product $product=null): array {
