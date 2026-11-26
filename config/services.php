@@ -5,5 +5,10 @@ return [
   'startpay_url'=>env('ZARINPAL_STARTPAY_URL','https://www.zarinpal.com/pg/StartPay'),
   'merchant_id'=>env('ZARINPAL_MERCHANT_ID')
  ],
- '0098sms'=>['api_key'=>env('SMS_API_KEY'),'base_url'=>env('SMS_BASE_URL')],
+ '0098sms'=>[
+  'base_url'=>env('SMS_BASE_URL'),
+  'username'=>env('SMS_USERNAME'),
+  'password'=>env('SMS_PASSWORD'),
+  'sender'=>env('SMS_SENDER'),
+ ],
 ];
