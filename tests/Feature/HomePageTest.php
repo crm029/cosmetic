@@ -860,4 +860,41 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
     }
 
+
+    public function test_admin_can_record_manual_refund_once_with_gateway_reference(): void
+    {
+        $admin = User::create(['name' => 'مدیر بازپرداخت', 'mobile' => '09111111203', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-REFUND-RECORD-01', 'customer_name' => 'مشتری بازپرداخت', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 180000, 'shipping_amount' => 0, 'total' => 180000,
+            'status' => 'refund_required', 'payment_status' => 'paid',
+        ]);
+        $payload = ['refund_ref_id' => 'REF-778899', 'refund_note' => 'بازپرداخت در پنل زرین‌پال انجام شد.'];
+
+        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/refund', $payload)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id, 'payment_status' => 'refunded', 'status' => 'cancelled',
+            'refund_ref_id' => 'REF-778899', 'refund_note' => $payload['refund_note'],
+        ]);
+        $this->assertNotNull($order->fresh()->refunded_at);
+
+        $this->post('/admin/orders/'.$order->id.'/refund', $payload)->assertSessionHasErrors('refund');
+        $this->assertSame(1, Order::whereKey($order->id)->where('payment_status', 'refunded')->count());
+    }
+
+    public function test_admin_cannot_record_refund_without_a_paid_refund_required_order(): void
+    {
+        $admin = User::create(['name' => 'مدیر بازپرداخت دوم', 'mobile' => '09111111204', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-REFUND-BLOCK-01', 'customer_name' => 'مشتری پرداخت‌نشده', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 90000, 'shipping_amount' => 0, 'total' => 90000,
+            'status' => 'pending', 'payment_status' => 'unpaid',
+        ]);
+        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/refund', [
+            'refund_ref_id' => 'REF-INVALID', 'refund_note' => 'نباید قابل ثبت باشد.',
+        ])->assertSessionHasErrors('refund');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'unpaid', 'status' => 'pending']);
+    }
+
 }
