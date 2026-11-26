@@ -6,7 +6,7 @@ use App\Services\ZarinpalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 class PaymentController extends Controller {
- public function callback(Request $request,ZarinpalService $gateway) {
+ public function callback(Request $request,ZarinpalService $gateway,SmsService $sms) {
   $authority=(string)$request->query('Authority','');$status=(string)$request->query('Status','');
   $order=Order::where('payment_authority',$authority)->first();
   if(!$order)return redirect()->route('home')->withErrors(['payment'=>'سفارش پرداخت‌شده پیدا نشد.']);
@@ -25,6 +25,7 @@ class PaymentController extends Controller {
     return true;
    });
    if(!$settled)return redirect()->route('home')->withErrors(['payment'=>'پرداخت موفق بود، اما موجودی نیاز به بررسی دستی دارد. با پشتیبانی فروشگاه تماس بگیرید.']);
+   if(!$order->fresh()->sms_sent_at && $sms->sendOrderPaid($order->fresh()))$order->update(['sms_sent_at'=>now()]);
    session()->forget('cart');
    return redirect()->route('home')->with('success','پرداخت با موفقیت تأیید شد. شماره سفارش: '.$order->order_number);
   } catch(\Throwable $e) {
