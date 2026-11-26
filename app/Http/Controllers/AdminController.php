@@ -1,0 +1,38 @@
+<?php
+namespace App\\Http\\Controllers;
+use App\\Models\\Category;
+use App\\Models\\Order;
+use App\\Models\\Product;
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\Storage;
+use Illuminate\\Support\\Str;
+use Illuminate\\View\\View;
+class AdminController extends Controller {
+ public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orders'=>Order::latest()->take(8)->get()]); }
+ public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
+ public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
+ public function storeProduct(Request $request) {
+  $data=$this->validatedProduct($request);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
+  if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
+  Product::create($data);return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
+ }
+ public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
+ public function updateProduct(Request $request,Product $product) {
+  $data=$this->validatedProduct($request,$product);if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
+  if(empty($data['slug']))$data['slug']=$product->slug;
+  $product->update($data);return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
+ }
+ public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);$product->delete();return back()->with('success','محصول حذف شد.'); }
+ private function validatedProduct(Request $request,?Product $product=null): array {
+  return $request->validate([
+   'category_id'=>['nullable','exists:categories,id'],'name'=>['required','string','max:190'],
+   'slug'=>['nullable','string','max:190','regex:/^[a-z0-9-]+$/','unique:products,slug,'.($product?->id??'NULL')],
+   'sku'=>['nullable','string','max:100','unique:products,sku,'.($product?->id??'NULL')],
+   'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
+   'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0'],
+   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],
+   'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
+   'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
+  ])+['is_active'=>$request->boolean('is_active'),'is_featured'=>$request->boolean('is_featured')];
+ }
+}
