@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('content')
+<section class="admin-wrap"><div class="admin-top"><div><span class="eyebrow">STORE CONTROL CENTER</span><h1>مدیریت فروشگاه</h1></div><form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="admin-logout">خروج</button></form></div>
+<div class="admin-stats"><a href="{{ route('admin.products') }}"><span>محصولات</span><b>{{ number_format($products) }}</b></a><div><span>دسته‌بندی‌ها</span><b>{{ number_format($categories) }}</b></div><div><span>سفارش‌های اخیر</span><b>{{ number_format($orders->count()) }}</b></div></div>
+<div class="admin-panel"><div class="section-heading"><h2>آخرین سفارش‌ها</h2><a class="text-link" href="{{ route('admin.products') }}">مدیریت محصولات ←</a></div><div class="admin-table"><div class="admin-row admin-head"><span>شماره سفارش</span><span>مشتری</span><span>مبلغ</span><span>وضعیت پرداخت</span></div>@forelse($orders as $order)<div class="admin-row"><span>{{ $order->order_number }}</span><span>{{ $order->customer_name }}</span><span>{{ number_format($order->total) }} تومان</span><span>{{ $order->payment_status==='paid'?'پرداخت‌شده':'در انتظار پرداخت' }}</span></div>@empty<p>هنوز سفارشی ثبت نشده است.</p>@endforelse</div></div>
+</section>
+@endsection
