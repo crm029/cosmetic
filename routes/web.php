@@ -26,6 +26,7 @@ Route::get('/contact',[ContactController::class,'index'])->name('contact.index')
 Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
 Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:5,1')->name('orders.track.lookup');
+Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware('throttle:5,1')->name('orders.pay.retry');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
