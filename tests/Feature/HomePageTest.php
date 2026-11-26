@@ -312,6 +312,12 @@ class HomePageTest extends TestCase
             'shipping_fee_toman' => 12000,
             'free_shipping_threshold_toman' => 300000,
         ]);
+
+        $this->get('/')->assertOk()
+            ->assertSee('فروشگاه زیبایی تست')
+            ->assertSee('09123456789')
+            ->assertSee('support@example.test')
+            ->assertSee('--ink: #29251f', false);
     }
 
     public function test_checkout_uses_admin_configured_shipping_fee(): void
