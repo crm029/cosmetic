@@ -14,7 +14,7 @@ class ZarinpalService {
   ])->throw()->json();
   if(($response['data']['code']??0)!==100||empty($response['data']['authority']))throw new RuntimeException($response['errors']['message']??'دریافت لینک پرداخت ناموفق بود.');
   $order->update(['payment_authority'=>$response['data']['authority']]);
-  return 'https://www.zarinpal.com/pg/StartPay/'.$response['data']['authority'];
+  return rtrim((string)config('services.zarinpal.startpay_url','https://www.zarinpal.com/pg/StartPay'),'/').'/'.$response['data']['authority'];
  }
  public function verify(Order $order): bool {
   $merchant=config('services.zarinpal.merchant_id');if(!$merchant||!$order->payment_authority)return false;
