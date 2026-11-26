@@ -53,7 +53,7 @@ class HomePageTest extends TestCase
             'customer_name' => 'مشتری آزمایشی',
             'mobile' => '09123456789',
             'shipping_address' => 'تهران، خیابان نمونه، پلاک ۱',
-        ])->assertRedirect('/checkout');
+        ])->assertRedirect('/checkout')->assertSessionHasErrors(['checkout' => 'درگاه پرداخت هنوز توسط مدیر فروشگاه پیکربندی نشده است.']);
 
         $this->assertDatabaseHas('orders', ['total' => 240000, 'payment_status' => 'unpaid']);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
@@ -220,7 +220,7 @@ class HomePageTest extends TestCase
             ->assertOk()
             ->assertSee('سرم آزمایشی')
             ->assertSee('BreadcrumbList', false)
-            ->assertSee('schema.org/Product', false);
+            ->assertSee('"@type":"Product"', false);
     }
 
     public function test_sitemap_contains_public_information_pages(): void
