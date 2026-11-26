@@ -50,7 +50,8 @@ class CheckoutController extends Controller {
    $suffix=$order?' شماره سفارش: '.$order->order_number:'';
    return redirect()->route('checkout.index')->withErrors(['checkout'=>$e->getMessage().$suffix]);
   } catch (\Throwable $e) {
-   report($e);return redirect()->route('checkout.index')->withErrors(['checkout'=>'پرداخت یا ثبت سفارش با خطا روبه‌رو شد. لطفاً دوباره تلاش کنید.']);
+   report($e);$suffix=$order?' شماره سفارش شما '.$order->order_number.' است؛ برای پرداخت مجدد از صفحه پیگیری سفارش استفاده کنید.':'';
+   return redirect()->route('checkout.index')->withErrors(['checkout'=>'ارتباط با درگاه یا ثبت سفارش با خطا روبه‌رو شد. لطفاً دوباره تلاش کنید.'.$suffix]);
   }
  }
 }
