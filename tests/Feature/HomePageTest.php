@@ -1199,4 +1199,80 @@ class HomePageTest extends TestCase
     }
 
 
+    public function test_paid_order_deducts_stock_and_records_movement_only_once(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول کسر موجودی',
+            'slug' => 'stock-deduction-once',
+            'price' => 100000,
+            'stock' => 5,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-STOCK-ONCE-01',
+            'customer_name' => 'مشتری موجودی',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'unit_price' => 100000,
+            'quantity' => 2,
+            'line_total' => 200000,
+        ]);
+
+        $service = app(\\App\\Services\\OrderFulfillmentService::class);
+
+        $this->assertTrue($service->deductStock($order));
+        $this->assertTrue($service->deductStock($order->fresh()));
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'stock_deducted_at' => true]);
+        $this->assertDatabaseCount('stock_movements', 1);
+    }
+
+    public function test_paid_order_with_insufficient_stock_is_flagged_without_negative_inventory(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول کمبود موجودی',
+            'slug' => 'stock-shortage-product',
+            'price' => 100000,
+            'stock' => 1,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-STOCK-SHORT-01',
+            'customer_name' => 'مشتری کمبود',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'unit_price' => 100000,
+            'quantity' => 2,
+            'line_total' => 200000,
+        ]);
+
+        $this->assertFalse(app(\\App\\Services\\OrderFulfillmentService::class)->deductStock($order));
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'paid_stock_issue', 'stock_deducted_at' => null]);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+
 }
