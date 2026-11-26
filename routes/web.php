@@ -17,6 +17,7 @@ Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.re
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
 Route::post('/checkout',[CheckoutController::class,'store'])->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
+Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
