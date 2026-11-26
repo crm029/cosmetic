@@ -18,9 +18,13 @@
             @endif
         @endif
 
-        @foreach($product->gallery ?? [] as $image)
-            <img class="product-gallery-image" src="{{ asset('storage/'.$image) }}" alt="{{ $product->name }} - تصویر {{ $loop->iteration }}" loading="lazy">
-        @endforeach
+        @if($product->gallery)
+            <div class="product-gallery">
+                @foreach($product->gallery as $image)
+                    <img src="{{ asset('storage/'.$image) }}" alt="{{ $product->name }} - تصویر {{ $loop->iteration }}" loading="lazy">
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <div class="detail-copy">
