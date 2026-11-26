@@ -39,7 +39,7 @@ function makeBottle(scene,{x=0,y=0,scale=1,tint=0xd6b7a8}={}){
  return group;
 }
 function mountHero3D(container){
- let renderer,frame,observer;
+ let renderer,frame,observer,visibilityHandler;
  try{
   const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(36,container.clientWidth/container.clientHeight,.1,100);camera.position.set(0,0,9);
   renderer=createRenderer(container);addLights(scene);
@@ -49,11 +49,11 @@ function mountHero3D(container){
   const main=makeBottle(scene,{x:-.55,y:-.1,scale:.78,tint:0xc9a99a});const mini=makeBottle(scene,{x:1.25,y:-.65,scale:.52,tint:0xe0c9b9});
   const pearl=new THREE.Mesh(new THREE.SphereGeometry(.12,24,24),new THREE.MeshPhysicalMaterial({color:0xf2e5d8,metalness:.35,roughness:.12,clearcoat:1}));pearl.position.set(2,.95,.2);scene.add(pearl);
   const resize=()=>{const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)};observer=new ResizeObserver(resize);observer.observe(container);
-  const animate=()=>{frame=requestAnimationFrame(animate);if(document.hidden)return;const t=performance.now()*.001;main.position.y=-.1+Math.sin(t*.8)*.09;main.rotation.y=Math.sin(t*.35)*.12;mini.position.y=-.65+Math.sin(t*.8+1.2)*.12;mini.rotation.y=-.2+Math.sin(t*.4)*.15;orbitGroup.rotation.z+=.0015;pearl.position.y=.95+Math.sin(t*1.1)*.13;renderer.render(scene,camera)};animate();
- }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(renderer)renderer.dispose();console.info('3D enhancement unavailable; CSS artwork remains visible.')}
+  const animate=()=>{if(document.hidden){frame=null;return;}frame=requestAnimationFrame(animate);const t=performance.now()*.001;main.position.y=-.1+Math.sin(t*.8)*.09;main.rotation.y=Math.sin(t*.35)*.12;mini.position.y=-.65+Math.sin(t*.8+1.2)*.12;mini.rotation.y=-.2+Math.sin(t*.4)*.15;orbitGroup.rotation.z+=.0015;pearl.position.y=.95+Math.sin(t*1.1)*.13;renderer.render(scene,camera)};const start=()=>{if(!frame&&!document.hidden)animate()};visibilityHandler=()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=null}else start()};document.addEventListener('visibilitychange',visibilityHandler);start();
+ }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(renderer)renderer.dispose();console.info('3D enhancement unavailable; CSS artwork remains visible.')}
 }
 function mountProductModel(container){
- let renderer,observer,frame,controls;
+ let renderer,observer,frame,controls,visibilityHandler;
  try{
   const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(35,container.clientWidth/container.clientHeight,.1,100);camera.position.set(0,0,5.5);
   renderer=createRenderer(container,true);addLights(scene);
@@ -63,9 +63,9 @@ function mountProductModel(container){
   new GLTFLoader().load(container.dataset.modelUrl,(gltf)=>{
    const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());const factor=3.3/Math.max(size.x,size.y,size.z,1);
    model.scale.setScalar(factor);model.position.sub(center.multiplyScalar(factor));scene.add(model);render();
-  },undefined,()=>{if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}mountHero3D(container)});
-  if(!reduced){const animate=()=>{frame=requestAnimationFrame(animate);if(!document.hidden){controls.update();render()}};animate()}else render();
- }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(controls)controls.dispose();if(renderer)renderer.dispose();mountHero3D(container)}
+  },undefined,()=>{if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}mountHero3D(container)});
+  const animate=()=>{if(document.hidden){frame=null;return;}frame=requestAnimationFrame(animate);controls.update();render()};const start=()=>{if(!reduced&&!frame&&!document.hidden)animate()};visibilityHandler=()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=null}else start()};document.addEventListener('visibilitychange',visibilityHandler);if(!reduced)start();else render();
+ }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(controls)controls.dispose();if(renderer)renderer.dispose();mountHero3D(container)}
 }
 const hero=document.querySelector('.hero-art');if(hero&&!reduced)mountHero3D(hero);
 const productViewer=document.querySelector('.product-3d-viewer');if(productViewer)mountProductModel(productViewer);
