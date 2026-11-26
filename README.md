@@ -1,16 +1,16 @@
 # Cosmetic Store
 
-فروشگاه اینترنتی مستقل محصولات آرایشی و مراقبتی با Laravel 12 و PHP 8.2+.
+فروشگاه اینترنتی مستقل محصولات آرایشی و مراقبتی با Laravel 13 و PHP 8.3+.
 
 ## فناوری‌ها
-- Laravel 12 / PHP 8.2+
+- Laravel 13 / PHP 8.3+
 - MySQL و Blade
 - Three.js برای جلوه‌های سه‌بعدی تدریجی و GSAP برای انیمیشن
 - طراحی واکنش‌گرا و رعایت prefers-reduced-motion
 - سئوی فنی اولیه: متادیتای صفحات، canonical، sitemap.xml و robots.txt
 
 ## راه‌اندازی
-1. PHP 8.2+ و Composer را نصب کنید.
+1. PHP 8.3+ و Composer را نصب کنید.
 2. `composer install`
 3. `cp .env.example .env` و مشخصات دیتابیس را وارد کنید.
 4. `php artisan key:generate`
