@@ -359,6 +359,7 @@ class HomePageTest extends TestCase
         OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 2, 'line_total' => 200000]);
 
         $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
+        $this->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])->assertSessionHasErrors('status');
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
 
         $product->update(['stock' => 3]);
