@@ -22,6 +22,8 @@ Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.inde
 Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
 Route::get('/about',fn()=>view('pages.about',['seoTitle'=>'درباره ما | '.StoreSetting::current()->store_name,'seoDescription'=>'با داستان و رویکرد فروشگاه محصولات زیبایی آشنا شوید.']))->name('about');
+Route::get('/privacy',fn()=>view('pages.privacy',['seoTitle'=>'حریم خصوصی | '.StoreSetting::current()->store_name,'seoDescription'=>'نحوه استفاده از اطلاعات مشتریان و سفارش‌ها.']))->name('privacy');
+Route::get('/terms',fn()=>view('pages.terms',['seoTitle'=>'قوانین خرید | '.StoreSetting::current()->store_name,'seoDescription'=>'قوانین قیمت‌گذاری، پرداخت، ارسال و پیگیری سفارش.']))->name('terms');
 Route::get('/faq',fn()=>view('pages.faq',['seoTitle'=>'پرسش‌های متداول | '.StoreSetting::current()->store_name,'seoDescription'=>'پاسخ پرسش‌های رایج درباره خرید، پرداخت و پیگیری سفارش.']))->name('faq');
 Route::get('/contact',[ContactController::class,'index'])->name('contact.index');
 Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
@@ -57,7 +59,7 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
 });
 Route::get('/robots.txt',fn()=>response("User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /cart\nDisallow: /checkout\nDisallow: /admin\nSitemap: ".url('/sitemap.xml'),200)->header('Content-Type','text/plain'));
 Route::get('/sitemap.xml',function(){
- $urls=[['loc'=>route('home'),'priority'=>'1.0'],['loc'=>route('shop'),'priority'=>'0.9'],['loc'=>route('about'),'priority'=>'0.5'],['loc'=>route('faq'),'priority'=>'0.6'],['loc'=>route('contact.index'),'priority'=>'0.5']];
+ $urls=[['loc'=>route('home'),'priority'=>'1.0'],['loc'=>route('shop'),'priority'=>'0.9'],['loc'=>route('about'),'priority'=>'0.5'],['loc'=>route('faq'),'priority'=>'0.6'],['loc'=>route('privacy'),'priority'=>'0.3'],['loc'=>route('terms'),'priority'=>'0.3'],['loc'=>route('contact.index'),'priority'=>'0.5']];
  if(\Illuminate\Support\Facades\Schema::hasTable('categories'))foreach(\App\Models\Category::where('is_active',true)->get() as $category)$urls[]=['loc'=>route('categories.show',$category),'priority'=>'0.8'];
  if(\Illuminate\Support\Facades\Schema::hasTable('products'))foreach(\App\Models\Product::where('is_active',true)->get() as $p)$urls[]=['loc'=>route('products.show',$p),'priority'=>'0.8'];
  return response()->view('seo.sitemap',compact('urls'))->header('Content-Type','application/xml');
