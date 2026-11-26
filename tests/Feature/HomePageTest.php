@@ -202,4 +202,31 @@ class HomePageTest extends TestCase
         $this->get('/faq')->assertOk()->assertSee('چطور سفارش ثبت کنم؟');
     }
 
+    public function test_product_detail_page_renders_product_and_gallery_schema(): void
+    {
+        $product = Product::create([
+            'name' => 'سرم آزمایشی',
+            'slug' => 'schema-serum',
+            'price' => 350000,
+            'stock' => 3,
+            'is_active' => true,
+            'gallery' => ['products/gallery/serum-side.webp'],
+        ]);
+
+        $this->get('/product/'.$product->slug)
+            ->assertOk()
+            ->assertSee('سرم آزمایشی')
+            ->assertSee('BreadcrumbList', false)
+            ->assertSee('schema.org/Product', false);
+    }
+
+    public function test_sitemap_contains_public_information_pages(): void
+    {
+        $this->get('/sitemap.xml')->assertOk()
+            ->assertHeader('Content-Type', 'application/xml')
+            ->assertSee('/about', false)
+            ->assertSee('/faq', false)
+            ->assertSee('/contact', false);
+    }
+
 }
