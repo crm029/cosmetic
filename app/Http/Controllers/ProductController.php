@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StoreSetting;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 class ProductController extends Controller {
@@ -24,7 +25,7 @@ class ProductController extends Controller {
    ->when(($filters['sort']??'latest')==='price_desc',fn($q)=>$q->orderByDesc('price'))
    ->when(($filters['sort']??'latest')==='latest',fn($q)=>$q->latest())
    ->paginate(12)->withQueryString();
-  return view('shop.index',['products'=>$products,'categories'=>Category::where('is_active',true)->orderBy('sort_order')->get(),'seoTitle'=>'فروشگاه محصولات زیبایی | '.config('app.name'),'seoDescription'=>'محصولات مراقبت پوست، مو و زیبایی را بررسی کنید.']);
+  return view('shop.index',['products'=>$products,'categories'=>Category::where('is_active',true)->orderBy('sort_order')->get(),'seoTitle'=>'فروشگاه محصولات زیبایی | '.StoreSetting::current()->store_name,'seoDescription'=>'محصولات مراقبت پوست، مو و زیبایی را بررسی کنید.']);
  }
  public function category(Category $category): View {
   abort_unless($category->is_active,404);
