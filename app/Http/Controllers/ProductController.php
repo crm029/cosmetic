@@ -6,10 +6,24 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 class ProductController extends Controller {
  public function index(Request $request): View {
-  $products=Product::where('is_active',true)
-   ->when($request->filled('category'),fn($q)=>$q->whereHas('category',fn($c)=>$c->where('slug',$request->string('category'))))
-   ->when($request->filled('q'),fn($q)=>$q->where('name','like','%'.$request->string('q').'%'))
-   ->latest()->paginate(12)->withQueryString();
+  $filters=$request->validate([
+   'q'=>['nullable','string','max:100'],
+   'category'=>['nullable','string','max:150'],
+   'min_price'=>['nullable','integer','min:0'],
+   'max_price'=>['nullable','integer','min:0'],
+   'sort'=>['nullable','in:latest,price_asc,price_desc'],
+   'in_stock'=>['nullable','boolean'],
+  ]);
+  $products=Product::with('category')->where('is_active',true)
+   ->when(!empty($filters['category']),fn($q)=>$q->whereHas('category',fn($c)=>$c->where('slug',$filters['category'])))
+   ->when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($search)use($term){$search->where('name','like',$term)->orWhere('short_description','like',$term)->orWhere('sku','like',$term);});})
+   ->when(isset($filters['min_price']),fn($q)=>$q->where('price','>=',$filters['min_price']))
+   ->when(isset($filters['max_price']),fn($q)=>$q->where('price','<=',$filters['max_price']))
+   ->when(!empty($filters['in_stock']),fn($q)=>$q->where('stock','>',0))
+   ->when(($filters['sort']??'latest')==='price_asc',fn($q)=>$q->orderBy('price'))
+   ->when(($filters['sort']??'latest')==='price_desc',fn($q)=>$q->orderByDesc('price'))
+   ->when(($filters['sort']??'latest')==='latest',fn($q)=>$q->latest())
+   ->paginate(12)->withQueryString();
   return view('shop.index',['products'=>$products,'categories'=>Category::where('is_active',true)->orderBy('sort_order')->get(),'seoTitle'=>'فروشگاه محصولات زیبایی | '.config('app.name'),'seoDescription'=>'محصولات مراقبت پوست، مو و زیبایی را بررسی کنید.']);
  }
  public function category(Category $category): View {
