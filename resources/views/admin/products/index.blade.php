@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('content')
+<section class="admin-wrap"><div class="admin-top"><div><span class="eyebrow">CATALOG MANAGEMENT</span><h1>محصولات</h1></div><a class="button button-dark" href="{{ route('admin.products.create') }}">افزودن محصول +</a></div>
+@if(session('success'))<p class="notice-success">{{ session('success') }}</p>@endif
+<div class="admin-panel"><div class="admin-table"><div class="admin-row admin-head"><span>نام محصول</span><span>دسته</span><span>قیمت</span><span>موجودی</span><span>وضعیت</span><span>عملیات</span></div>
+@forelse($products as $product)<div class="admin-row"><span>{{ $product->name }}</span><span>{{ $product->category?->name ?? '—' }}</span><span>{{ number_format($product->price) }}</span><span>{{ $product->stock }}</span><span>{{ $product->is_active?'فعال':'پیش‌نویس' }}</span><span class="admin-actions"><a href="{{ route('admin.products.edit',$product) }}">ویرایش</a><form method="POST" action="{{ route('admin.products.delete',$product) }}" onsubmit="return confirm('محصول حذف شود؟')">@csrf @method('DELETE')<button>حذف</button></form></span></div>@empty<p>هنوز محصولی ثبت نشده است.</p>@endforelse</div><div class="pagination-wrap">{{ $products->links() }}</div></div><a class="text-link" href="{{ route('admin.dashboard') }}">بازگشت به مدیریت ←</a></section>
+@endsection
