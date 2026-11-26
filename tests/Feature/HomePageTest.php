@@ -4,6 +4,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -69,4 +70,46 @@ class HomePageTest extends TestCase
             'mobile' => '09123456789',
         ])->assertOk()->assertSee($order->order_number);
     }
+    public function test_admin_cannot_cancel_a_paid_order_without_refund(): void
+    {
+        $admin = User::create(['name' => 'مدیر تست', 'mobile' => '09111111111', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-PAID01',
+            'customer_name' => 'مشتری تست',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 150000,
+            'shipping_amount' => 0,
+            'total' => 150000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, ['status' => 'cancelled'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'processing']);
+    }
+
+    public function test_unpaid_order_cannot_be_marked_as_shipped(): void
+    {
+        $admin = User::create(['name' => 'مدیر تست', 'mobile' => '09111111112', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $order = Order::create([
+            'order_number' => 'CS-261126-UNPAID1',
+            'customer_name' => 'مشتری تست',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 150000,
+            'shipping_amount' => 0,
+            'total' => 150000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'pending']);
+    }
+
 }
