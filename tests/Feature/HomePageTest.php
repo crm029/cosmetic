@@ -449,6 +449,8 @@ class HomePageTest extends TestCase
 
     public function test_admin_can_add_shipment_tracking_and_customer_can_view_it(): void
     {
+        config(['services.0098sms.base_url'=>'https://sms.test/send','services.0098sms.username'=>'test-user','services.0098sms.password'=>'test-password','services.0098sms.sender'=>'10001000']);
+        Http::fake(['sms.test/*'=>Http::response('1',200)]);
         $admin = User::create(['name' => 'مدیر ارسال', 'mobile' => '09111111120', 'password' => 'a-secure-test-password', 'is_admin' => true]);
         $order = Order::create([
             'order_number' => 'CS-SHIP-TRACK01',
@@ -470,6 +472,8 @@ class HomePageTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'shipped', 'tracking_code' => '123456789012345']);
+        $this->assertNotNull($order->fresh()->shipment_sms_sent_at);
+        Http::assertSentCount(1);
         $this->post('/order/track', ['order_number' => $order->order_number, 'mobile' => '09123456789'])
             ->assertOk()
             ->assertSee('123456789012345')
