@@ -9,6 +9,7 @@ class OrderFulfillmentService {
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
    if($locked->stock_deducted_at)return true;
    if($locked->payment_status!=='paid')return false;
+   if($locked->status==='cancelled'){$locked->update(['status'=>'paid_stock_issue']);return false;}
    foreach($locked->items as $item){
     $product=Product::whereKey($item->product_id)->lockForUpdate()->first();
     if(!$product||$product->stock<$item->quantity){$locked->update(['status'=>'paid_stock_issue']);return false;}
