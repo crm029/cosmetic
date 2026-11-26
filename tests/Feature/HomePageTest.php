@@ -1228,7 +1228,7 @@ class HomePageTest extends TestCase
             'line_total' => 200000,
         ]);
 
-        $service = app(\\App\\Services\\OrderFulfillmentService::class);
+        $service = app(\App\Services\OrderFulfillmentService::class);
 
         $this->assertTrue($service->deductStock($order));
         $this->assertTrue($service->deductStock($order->fresh()));
@@ -1267,7 +1267,7 @@ class HomePageTest extends TestCase
             'line_total' => 200000,
         ]);
 
-        $this->assertFalse(app(\\App\\Services\\OrderFulfillmentService::class)->deductStock($order));
+        $this->assertFalse(app(\App\Services\OrderFulfillmentService::class)->deductStock($order));
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'paid_stock_issue', 'stock_deducted_at' => null]);
