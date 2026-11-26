@@ -390,4 +390,28 @@ class HomePageTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_admin_can_filter_products_by_search_and_visibility(): void
+    {
+        $admin = User::create(['name' => 'مدیر کاتالوگ', 'mobile' => '09111111118', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        Product::create(['name' => 'سرم فعال', 'slug' => 'active-serum', 'sku' => 'SERUM-101', 'price' => 100000, 'stock' => 4, 'is_active' => true]);
+        Product::create(['name' => 'سرم پیش‌نویس', 'slug' => 'draft-serum', 'sku' => 'SERUM-102', 'price' => 120000, 'stock' => 2, 'is_active' => false]);
+
+        $this->actingAs($admin)->get('/admin/products?q=SERUM&visibility=active')
+            ->assertOk()
+            ->assertSee('سرم فعال')
+            ->assertDontSee('سرم پیش‌نویس');
+    }
+
+    public function test_admin_can_filter_orders_by_status_and_payment(): void
+    {
+        $admin = User::create(['name' => 'مدیر سفارش', 'mobile' => '09111111119', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $paid = Order::create(['order_number' => 'CS-PAID-FILTER', 'customer_name' => 'مشتری اول', 'mobile' => '09123456789', 'shipping_address' => 'تهران، خیابان نمونه', 'subtotal' => 100000, 'shipping_amount' => 0, 'total' => 100000, 'status' => 'processing', 'payment_status' => 'paid']);
+        Order::create(['order_number' => 'CS-UNPAID-FILTER', 'customer_name' => 'مشتری دوم', 'mobile' => '09123456780', 'shipping_address' => 'تهران، خیابان نمونه', 'subtotal' => 100000, 'shipping_amount' => 0, 'total' => 100000, 'status' => 'pending', 'payment_status' => 'unpaid']);
+
+        $this->actingAs($admin)->get('/admin/orders?q=CS-PAID&status=processing&payment_status=paid')
+            ->assertOk()
+            ->assertSee($paid->order_number)
+            ->assertDontSee('CS-UNPAID-FILTER');
+    }
+
 }
