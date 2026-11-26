@@ -1130,4 +1130,52 @@ class HomePageTest extends TestCase
         );
     }
 
+
+    public function test_regular_user_cannot_access_admin_dashboard(): void
+    {
+        $user = User::create([
+            'name' => 'کاربر عادی',
+            'mobile' => '09123456780',
+            'password' => 'a-secure-test-password',
+            'is_admin' => false,
+        ]);
+
+        $this->actingAs($user)->get('/admin')
+            ->assertRedirect('/admin/login');
+    }
+
+    public function test_updating_inactive_product_removes_it_from_cart(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول غیرفعال',
+            'slug' => 'inactive-cart-product',
+            'price' => 120000,
+            'stock' => 5,
+            'is_active' => false,
+        ]);
+
+        $this->withSession(['cart' => [$product->id => 1]])
+            ->patch('/cart/'.$product->id, ['quantity' => 2])
+            ->assertSessionHasErrors('cart')
+            ->assertSessionHas('cart', []);
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
+    }
+
+    public function test_sitemap_excludes_inactive_products(): void
+    {
+        Product::create([
+            'name' => 'محصول پنهان',
+            'slug' => 'hidden-sitemap-product',
+            'price' => 100000,
+            'stock' => 1,
+            'is_active' => false,
+        ]);
+
+        $this->get('/sitemap.xml')
+            ->assertOk()
+            ->assertDontSee(route('products.show', ['product' => 'hidden-sitemap-product']), false);
+    }
+
+
 }
