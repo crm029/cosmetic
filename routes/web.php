@@ -43,7 +43,7 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
 Route::get('/robots.txt',fn()=>response("User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /cart\nDisallow: /checkout\nDisallow: /admin\nSitemap: ".url('/sitemap.xml'),200)->header('Content-Type','text/plain'));
 Route::get('/sitemap.xml',function(){
  $urls=[['loc'=>route('home'),'priority'=>'1.0'],['loc'=>route('shop'),'priority'=>'0.9']];
- if(\\Illuminate\\Support\\Facades\\Schema::hasTable('categories'))foreach(\\App\\Models\\Category::where('is_active',true)->get() as $category)$urls[]=['loc'=>route('categories.show',$category),'priority'=>'0.8'];
+ if(\Illuminate\Support\Facades\Schema::hasTable('categories'))foreach(\App\Models\Category::where('is_active',true)->get() as $category)$urls[]=['loc'=>route('categories.show',$category),'priority'=>'0.8'];
  if(\Illuminate\Support\Facades\Schema::hasTable('products'))foreach(\App\Models\Product::where('is_active',true)->get() as $p)$urls[]=['loc'=>route('products.show',$p),'priority'=>'0.8'];
  return response()->view('seo.sitemap',compact('urls'))->header('Content-Type','application/xml');
 })->name('sitemap');
