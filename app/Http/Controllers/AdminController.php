@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 class AdminController extends Controller {
- public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orderCount'=>Order::count(),'orders'=>Order::latest()->take(8)->get()]); }
+ public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orderCount'=>Order::count(),'unreadMessages'=>ContactMessage::where('is_read',false)->count(),'orders'=>Order::latest()->take(8)->get()]); }
  public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
