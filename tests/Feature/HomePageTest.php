@@ -443,4 +443,34 @@ class HomePageTest extends TestCase
             ->assertSee('پست پیشتاز');
     }
 
+    public function test_customer_can_retry_payment_for_an_unpaid_order(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'test-merchant',
+            'services.zarinpal.base_url' => 'https://api.zarinpal.com/pg/v4/payment',
+            'services.zarinpal.startpay_url' => 'https://www.zarinpal.com/pg/StartPay',
+        ]);
+        Http::fake([
+            'api.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'authority' => 'AUTH-RETRY-123']], 200),
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-RETRY-ORDER',
+            'customer_name' => 'مشتری پرداخت مجدد',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، خیابان نمونه',
+            'subtotal' => 175000,
+            'shipping_amount' => 0,
+            'total' => 175000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->post('/order/'.$order->id.'/pay', [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertRedirect('https://www.zarinpal.com/pg/StartPay/AUTH-RETRY-123');
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_authority' => 'AUTH-RETRY-123']);
+    }
+
 }
