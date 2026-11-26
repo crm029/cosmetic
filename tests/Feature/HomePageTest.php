@@ -2,6 +2,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -178,6 +179,21 @@ class HomePageTest extends TestCase
             ->assertHeader('X-Content-Type-Options', 'nosniff')
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    }
+
+    public function test_admin_can_read_and_mark_customer_messages(): void
+    {
+        $admin = User::create(['name' => 'مدیر پشتیبانی', 'mobile' => '09111111115', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $message = ContactMessage::create([
+            'name' => 'مشتری پیام‌دهنده',
+            'mobile' => '09123456789',
+            'subject' => 'سؤال تست',
+            'message' => 'این یک پیام آزمایشی برای صندوق پشتیبانی است.',
+        ]);
+
+        $this->actingAs($admin)->get('/admin/messages')->assertOk()->assertSee('این یک پیام آزمایشی');
+        $this->patch('/admin/messages/'.$message->id.'/read')->assertRedirect();
+        $this->assertDatabaseHas('contact_messages', ['id' => $message->id, 'is_read' => true]);
     }
 
 }
