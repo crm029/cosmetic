@@ -52,7 +52,7 @@ function mountProductModel(container){
   new GLTFLoader().load(container.dataset.modelUrl,(gltf)=>{
    const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());const factor=3.3/Math.max(size.x,size.y,size.z,1);
    model.scale.setScalar(factor);model.position.sub(center.multiplyScalar(factor));scene.add(model);render();
-  },undefined,()=>{if(observer)observer.disconnect();if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}mountHero3D(container)});
+  },undefined,()=>{if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}mountHero3D(container)});
   if(!reduced){const animate=()=>{frame=requestAnimationFrame(animate);if(!document.hidden){controls.update();render()}};animate()}else render();
  }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(controls)controls.dispose();if(renderer)renderer.dispose();mountHero3D(container)}
 }
