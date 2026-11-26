@@ -6,7 +6,7 @@ use RuntimeException;
 class ZarinpalService {
  private function baseUrl(): string { return rtrim((string)config('services.zarinpal.base_url','https://api.zarinpal.com/pg/v4/payment'),' /'); }
  public function requestPayment(Order $order): string {
-  $merchant=env('ZARINPAL_MERCHANT_ID');
+  $merchant=config('services.zarinpal.merchant_id');
   if(!$merchant)throw new RuntimeException('درگاه پرداخت هنوز توسط مدیر فروشگاه پیکربندی نشده است.');
   $response=Http::acceptJson()->asJson()->timeout(20)->post($this->baseUrl().'/request.json',[
    'merchant_id'=>$merchant,'amount'=>$order->total*10,'description'=>'پرداخت سفارش '.$order->order_number,
