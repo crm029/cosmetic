@@ -89,6 +89,47 @@ class HomePageTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_security_headers_are_present_on_store_pages(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('X-Permitted-Cross-Domain-Policies', 'none')
+            ->assertHeader('X-DNS-Prefetch-Control', 'off')
+            ->assertHeader('Origin-Agent-Cluster', '?1');
+    }
+
+    public function test_sitemap_includes_active_products_and_last_modified_dates(): void
+    {
+        $category = Category::create(['name' => 'مراقبت پوست', 'slug' => 'sitemap-skin', 'is_active' => true]);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'محصول نقشه سایت',
+            'slug' => 'sitemap-product',
+            'price' => 150000,
+            'stock' => 3,
+            'is_active' => true,
+        ]);
+
+        $this->get('/sitemap.xml')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/xml')
+            ->assertSee(route('products.show', $product), false)
+            ->assertSee('<lastmod>', false);
+    }
+
+    public function test_contact_honeypot_rejects_bot_submission(): void
+    {
+        $this->post('/contact', [
+            'name' => 'ربات',
+            'message' => 'این پیام آزمایشی ربات است.',
+            'website' => 'https://spam.example',
+        ])->assertSessionHasErrors('website');
+
+        $this->assertDatabaseCount('contact_messages', 0);
+    }
+
     public function test_homepage_returns_successful_response(): void
     {
         $this->get('/')->assertOk()->assertSee('زیبایی');
