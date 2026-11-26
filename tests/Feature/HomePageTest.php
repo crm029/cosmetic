@@ -1234,7 +1234,7 @@ class HomePageTest extends TestCase
         $this->assertTrue($service->deductStock($order->fresh()));
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'stock_deducted_at' => true]);
+        $this->assertNotNull($order->fresh()->stock_deducted_at);
         $this->assertDatabaseCount('stock_movements', 1);
     }
 
