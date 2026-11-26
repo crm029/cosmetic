@@ -73,6 +73,7 @@ class AdminController extends Controller {
   $error=DB::transaction(function()use($order,$data){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
    if($locked->status==='cancelled'&&$data['status']!=='cancelled')return 'سفارش لغوشده قابل فعال‌سازی مجدد نیست.';
+   if($locked->status==='paid_stock_issue'&&!$locked->stock_deducted_at)return 'ابتدا مشکل موجودی را از طریق گزینه تلاش مجدد برای کسر موجودی برطرف کنید.';
    if($locked->payment_status==='paid'&&$data['status']==='cancelled')return 'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.';
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
    $rank=['pending'=>0,'processing'=>1,'shipped'=>2,'delivered'=>3];
