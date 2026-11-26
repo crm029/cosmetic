@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('content')
+<section class="admin-wrap"><div class="admin-top"><div><span class="eyebrow">CUSTOMER CARE</span><h1>پیام‌های مشتریان</h1></div><a class="text-link" href="{{ route('admin.dashboard') }}">بازگشت به مدیریت ←</a></div>
+@if(session('success'))<p class="notice-success">{{ session('success') }}</p>@endif
+<div class="admin-panel"><div class="admin-table"><div class="admin-row message-admin-head"><span>فرستنده</span><span>راه ارتباطی</span><span>موضوع و پیام</span><span>وضعیت</span><span>عملیات</span></div>
+@forelse($messages as $message)<div class="admin-row message-admin-row"><span>{{ $message->name }}<small>{{ $message->created_at->format('Y/m/d H:i') }}</small></span><span>{{ $message->mobile ?: '—' }}<small>{{ $message->email ?: '—' }}</small></span><span><strong>{{ $message->subject ?: 'بدون موضوع' }}</strong><p>{{ $message->message }}</p></span><span>{{ $message->is_read?'خوانده‌شده':'جدید' }}</span><span>@unless($message->is_read)<form method="POST" action="{{ route('admin.messages.read',$message) }}">@csrf @method('PATCH')<button class="text-link">علامت‌گذاری به‌عنوان خوانده‌شده</button></form>@else—@endunless</span></div>@empty<p>هنوز پیامی ثبت نشده است.</p>@endforelse</div><div class="pagination-wrap">{{ $messages->links() }}</div></div></section>
+@endsection
