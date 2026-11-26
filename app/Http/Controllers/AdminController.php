@@ -86,6 +86,18 @@ class AdminController extends Controller {
   $sms->sendOrderPaidOnce($order->fresh());
   return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
+ public function recordRefund(Request $request,Order $order) {
+  $data=$request->validate(['refund_ref_id'=>['required','string','max:120'],'refund_note'=>['required','string','min:5','max:1000']]);
+  $error=DB::transaction(function()use($order,$data){
+   $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+   if($locked->payment_status==='refunded')return 'بازپرداخت این سفارش قبلاً ثبت شده است.';
+   if($locked->payment_status!=='paid'||$locked->status!=='refund_required')return 'فقط سفارش‌های پرداخت‌شده و نیازمند بازپرداخت قابل ثبت هستند.';
+   $locked->update(['payment_status'=>'refunded','refund_ref_id'=>$data['refund_ref_id'],'refund_note'=>$data['refund_note'],'refunded_at'=>now(),'status'=>'cancelled']);
+   return null;
+  });
+  if($error)return back()->withErrors(['refund'=>$error]);
+  return back()->with('success','بازپرداخت انجام‌شده در درگاه با شماره مرجع ثبت شد.');
+ }
  public function updateOrderStatus(Request $request,Order $order,SmsService $sms) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled'],'shipping_carrier'=>['nullable','string','max:100'],'tracking_code'=>['nullable','string','max:120']]);
   $error=DB::transaction(function()use($order,$data){
