@@ -45,9 +45,16 @@ class AdminController extends Controller {
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function updateOrderStatus(Request $request,Order $order) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled']]);
-  if($data['status']==='cancelled' && $order->payment_status==='paid')return back()->withErrors(['status'=>'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.']);
-  if(in_array($data['status'],['processing','shipped','delivered'],true) && ($order->payment_status!=='paid'||!$order->stock_deducted_at))return back()->withErrors(['status'=>'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.']);
-  DB::transaction(function()use($order,$data){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked->payment_status==='paid'&&$data['status']==='cancelled')throw new \RuntimeException('سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.');$locked->update(['status'=>$data['status']]);});
+  $error=DB::transaction(function()use($order,$data){
+   $locked=Order::whereKey($order->id)->lockForUpdate()->first();
+   if($locked->status==='cancelled'&&$data['status']!=='cancelled')return 'سفارش لغوشده قابل فعال‌سازی مجدد نیست.';
+   if($locked->payment_status==='paid'&&$data['status']==='cancelled')return 'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.';
+   if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
+   $rank=['pending'=>0,'processing'=>1,'shipped'=>2,'delivered'=>3];
+   if(isset($rank[$locked->status],$rank[$data['status']])&&$rank[$data['status']]<$rank[$locked->status])return 'وضعیت سفارش امکان بازگشت به مرحله قبلی را ندارد.';
+   $locked->update(['status'=>$data['status']]);return null;
+  });
+  if($error)return back()->withErrors(['status'=>$error]);
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
  private function validatedProduct(Request $request,?Product $product=null): array {
