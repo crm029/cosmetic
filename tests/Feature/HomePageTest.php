@@ -1178,4 +1178,25 @@ class HomePageTest extends TestCase
     }
 
 
+
+    public function test_product_3d_viewer_keeps_an_image_fallback(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول سه‌بعدی',
+            'slug' => 'three-dimensional-product',
+            'price' => 200000,
+            'stock' => 2,
+            'image' => 'products/fallback.webp',
+            'model_3d' => 'models/product.glb',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('product-3d-viewer', false)
+            ->assertSee('product-3d-fallback', false)
+            ->assertSee('storage/products/fallback.webp', false);
+    }
+
+
 }
