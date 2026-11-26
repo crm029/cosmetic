@@ -1,7 +1,6 @@
 @extends('layouts.app')
 @push('head')
 <script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'image'=>$product->image ? [asset('storage/'.$product->image)] : [],'sku'=>$product->sku,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
-@if($product->canonical_url)<link rel="canonical" href="{{ $product->canonical_url }}">@endif
 @endpush
 @section('content')
 <section class="section-block product-detail"><div class="detail-image">@if($product->image)<img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">@else<div class="product-placeholder detail-placeholder" data-3d-placeholder="true"><span></span></div>@endif</div>
