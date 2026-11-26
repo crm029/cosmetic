@@ -10,6 +10,6 @@
 <label>آدرس کامل تحویل<textarea name="shipping_address" rows="4" required>{{ old('shipping_address') }}</textarea></label>
 <label>توضیحات سفارش (اختیاری)<textarea name="notes" rows="2">{{ old('notes') }}</textarea></label>
 <button class="button button-dark" type="submit">ثبت سفارش و پرداخت <span>←</span></button></form></div>
-<aside class="checkout-summary"><h3>خلاصه سفارش</h3>@foreach($products as $product)<p>{{ $product->name }} × {{ $cart[$product->id] }} <b>{{ number_format($product->price*$cart[$product->id]) }} تومان</b></p>@endforeach<hr><strong>مبلغ قابل پرداخت <b>{{ number_format($total) }} تومان</b></strong><small>هزینه ارسال در مرحله بعد توسط فروشگاه تعیین می‌شود.</small></aside>
+<aside class="checkout-summary"><h3>خلاصه سفارش</h3>@foreach($products as $product)<p>{{ $product->name }} × {{ $cart[$product->id] }} <b>{{ number_format($product->price*$cart[$product->id]) }} تومان</b></p>@endforeach<hr><p>جمع محصولات <b>{{ number_format($subtotal) }} تومان</b></p><p>هزینه ارسال <b>{{ $shipping ? number_format($shipping).' تومان' : 'رایگان' }}</b></p><strong>مبلغ قابل پرداخت <b>{{ number_format($total) }} تومان</b></strong></aside>
 </section>
 @endsection
