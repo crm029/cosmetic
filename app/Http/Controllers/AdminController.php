@@ -5,6 +5,8 @@ use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\StoreSetting;
+use App\Services\OrderFulfillmentService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +54,12 @@ class AdminController extends Controller {
  public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
  public function orders(): View { return view('admin.orders.index',['orders'=>Order::latest()->paginate(25)]); }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
+ public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,SmsService $sms) {
+  if($order->payment_status!=='paid')return back()->withErrors(['stock'=>'فقط سفارش پرداخت‌شده قابل بررسی مجدد است.']);
+  if(!$fulfillment->deductStock($order))return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
+  $fresh=$order->fresh();if(!$fresh->sms_sent_at&&$sms->sendOrderPaid($fresh))$fresh->update(['sms_sent_at'=>now()]);
+  return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
+ }
  public function updateOrderStatus(Request $request,Order $order) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled']]);
   $error=DB::transaction(function()use($order,$data){
