@@ -27,6 +27,9 @@
 - وابستگی‌ها را با Composer نصب و فایل .env را فقط روی سرور تنظیم کنید.
 - `APP_ENV=production` و `APP_DEBUG=false` قرار دهید.
 - `APP_URL` را پس از انتخاب دامنه واقعی تنظیم کنید؛ دامنه‌ای در کد ثابت نشده است.
+- هاست باید افزونه‌های رسمی موردنیاز Laravel 13 مانند cURL، OpenSSL، Tokenizer، Ctype، DOM، Fileinfo، Mbstring، PDO و XML را فعال داشته باشد.
+- برای بارگذاری مدل GLB، مقدارهای `upload_max_filesize` و `post_max_size` را حداقل 21M تنظیم کنید.
+- در محیط واقعی `SESSION_SECURE_COOKIE=true` را فعال کنید.
 - Document Root دامنه باید به پوشه `public` اشاره کند. پوشه‌های app، vendor و فایل .env نباید از وب قابل دسترسی باشند.
 - به `storage` و `bootstrap/cache` دسترسی نوشتن بدهید.
 - دیتابیس را بسازید، سپس `php artisan migrate --force --seed` اجرا کنید.
