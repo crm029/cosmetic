@@ -1,4 +1,8 @@
 @extends('layouts.app')
+@push('head')
+<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'WebSite','name'=>config('app.name'),'url'=>route('home'),'inLanguage'=>'fa-IR'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'Organization','name'=>config('app.name'),'url'=>route('home')],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
 @section('content')
 <section class="hero"><div class="hero-copy"><span class="eyebrow"><i></i> THE ART OF EVERYDAY CARE</span><h1>زیبایی،<br><em>در تعادل</em> معنا می‌شود.</h1><p>مجموعه‌ای از انتخاب‌های هوشمندانه برای مراقبت از پوست، مو و لحظه‌های کوچکِ حال خوب.</p><a class="button button-dark" href="{{ route('shop') }}">کشف مجموعه <span>←</span></a><div class="hero-note"><span>01 / 03</span><span>CURATED FOR YOU</span></div></div>
 <div class="hero-art" aria-label="ترکیب هنری انتزاعی الهام‌گرفته از محصولات مراقبت زیبایی"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-pedestal"></div><div class="art-bottle bottle-main"><span></span><i></i></div><div class="art-bottle bottle-small"><span></span><i></i></div><div class="stone-one"></div><div class="stone-two"></div><div class="art-caption">A LITTLE<br>RITUAL, A LOT<br>OF YOU.</div></div><div class="hero-side-label">SKINCARE · HAIRCARE · WELLNESS</div></section>
