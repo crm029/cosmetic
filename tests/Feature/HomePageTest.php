@@ -172,4 +172,12 @@ class HomePageTest extends TestCase
         ]);
     }
 
+    public function test_security_headers_are_present_on_public_pages(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    }
+
 }
