@@ -45,6 +45,7 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::get('/orders',[AdminController::class,'orders'])->name('orders');
  Route::get('/orders/{order}',[AdminController::class,'showOrder'])->name('orders.show');
  Route::patch('/orders/{order}',[AdminController::class,'updateOrderStatus'])->name('orders.update');
+ Route::post('/orders/{order}/reconcile',[AdminController::class,'reconcileOrder'])->name('orders.reconcile');
  Route::get('/products',[AdminController::class,'products'])->name('products');
  Route::get('/products/create',[AdminController::class,'createProduct'])->name('products.create');
  Route::post('/products',[AdminController::class,'storeProduct'])->name('products.store');
