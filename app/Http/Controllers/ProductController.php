@@ -33,6 +33,15 @@ class ProductController extends Controller {
  }
  public function show(Product $product): View {
   abort_unless($product->is_active,404);
-  return view('shop.show',['product'=>$product,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
+  $images=[];
+  if($product->image)$images[]=asset('storage/'.$product->image);
+  foreach($product->gallery??[] as $image)$images[]=asset('storage/'.$image);
+  $productSchema=['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'image'=>$images,'sku'=>$product->sku,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]];
+  $breadcrumbSchema=['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
+   ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
+   ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
+   ['@type'=>'ListItem','position'=>3,'name'=>$product->name,'item'=>url()->current()],
+  ]];
+  return view('shop.show',['product'=>$product,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
  }
 }
