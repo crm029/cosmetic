@@ -292,6 +292,8 @@ class HomePageTest extends TestCase
     {
         $admin = User::create(['name' => 'مدیر تنظیمات', 'mobile' => '09111111116', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
+        $this->actingAs($admin)->get('/admin/settings')->assertOk()->assertSee('تنظیمات فروشگاه');
+
         $this->actingAs($admin)->put('/admin/settings', [
             'store_name' => 'فروشگاه زیبایی تست',
             'tagline' => 'مراقبت با انتخاب آگاهانه',
