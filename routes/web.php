@@ -6,6 +6,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\OrderTrackingController;
 use Illuminate\Support\Facades\Route;
 Route::get('/',[HomeController::class,'index'])->name('home');
 Route::get('/shop',[ProductController::class,'index'])->name('shop');
