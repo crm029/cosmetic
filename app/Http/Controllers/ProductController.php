@@ -12,6 +12,11 @@ class ProductController extends Controller {
    ->latest()->paginate(12)->withQueryString();
   return view('shop.index',['products'=>$products,'categories'=>Category::where('is_active',true)->orderBy('sort_order')->get(),'seoTitle'=>'فروشگاه محصولات زیبایی | '.config('app.name'),'seoDescription'=>'محصولات مراقبت پوست، مو و زیبایی را بررسی کنید.']);
  }
+ public function category(Category $category): View {
+  abort_unless($category->is_active,404);
+  $products=$category->products()->where('is_active',true)->latest()->paginate(12);
+  return view('shop.category',['category'=>$category,'products'=>$products,'seoTitle'=>$category->seo_title ?: $category->name.' | '.config('app.name'),'seoDescription'=>$category->seo_description ?: ($category->description ?: 'مشاهده محصولات '.$category->name)]);
+ }
  public function show(Product $product): View {
   abort_unless($product->is_active,404);
   return view('shop.show',['product'=>$product,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
