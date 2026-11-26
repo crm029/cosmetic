@@ -26,8 +26,8 @@ class AdminController extends Controller {
  private function validatedProduct(Request $request,?Product $product=null): array {
   return $request->validate([
    'category_id'=>['nullable','exists:categories,id'],'name'=>['required','string','max:190'],
-   'slug'=>['nullable','string','max:190','regex:/^[a-z0-9-]+$/','unique:products,slug,'.($product?->id??'NULL')],
-   'sku'=>['nullable','string','max:100','unique:products,sku,'.($product?->id??'NULL')],
+   'slug'=>['nullable','string','max:190','regex:/^[a-z0-9-]+$/',Rule::unique('products','slug')->ignore($product?->id)],
+   'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
    'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0'],
    'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],
