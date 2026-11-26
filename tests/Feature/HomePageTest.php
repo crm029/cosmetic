@@ -473,4 +473,19 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_authority' => 'AUTH-RETRY-123']);
     }
 
+    public function test_admin_cannot_set_compare_price_below_selling_price(): void
+    {
+        $admin = User::create(['name' => 'مدیر قیمت', 'mobile' => '09111111121', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+
+        $this->actingAs($admin)->post('/admin/products', [
+            'name' => 'محصول قیمت‌گذاری',
+            'slug' => 'price-validation-product',
+            'price' => 150000,
+            'compare_price' => 120000,
+            'stock' => 2,
+        ])->assertSessionHasErrors('compare_price');
+
+        $this->assertDatabaseMissing('products', ['slug' => 'price-validation-product']);
+    }
+
 }
