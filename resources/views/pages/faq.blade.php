@@ -5,7 +5,7 @@
  ['@type'=>'Question','name'=>'برای خرید باید حساب کاربری بسازم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'خرید مهمان امکان‌پذیر است و برای ثبت سفارش نیازی به ساخت حساب کاربری ندارید.']],
  ['@type'=>'Question','name'=>'چطور سفارش را پیگیری کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'شماره سفارش و شماره موبایلی را که هنگام خرید ثبت کرده‌اید در صفحه پیگیری سفارش وارد کنید.']],
  ['@type'=>'Question','name'=>'اگر در خرید یا پرداخت مشکلی پیش آمد چه کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'از طریق صفحه تماس با ما پیام بفرستید و شماره سفارش را در متن پیام درج کنید.']]
-],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+ ]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
 @endpush
 @section('content')
 <section class="page-intro"><span class="eyebrow">A LITTLE HELP</span><h1>پرسش‌های <em>متداول</em></h1><p>پاسخ چند سؤال رایج درباره خرید و پیگیری سفارش.</p></section>
