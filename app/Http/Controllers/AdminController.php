@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Category;
+use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -41,6 +42,8 @@ class AdminController extends Controller {
   $data['is_active']=$request->boolean('is_active');$category->update($data);return redirect()->route('admin.categories')->with('success','دسته‌بندی ویرایش شد.');
  }
  public function deleteCategory(Category $category) { if($category->image)Storage::disk('public')->delete($category->image);$category->delete();return back()->with('success','دسته‌بندی حذف شد.'); }
+ public function messages(): View { return view('admin.messages.index',['messages'=>ContactMessage::latest()->paginate(25)]); }
+ public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
  public function orders(): View { return view('admin.orders.index',['orders'=>Order::latest()->paginate(25)]); }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function updateOrderStatus(Request $request,Order $order) {
