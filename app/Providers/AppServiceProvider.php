@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider {
   View::composer('layouts.app',function($view){
    $data=$view->getData();$product=$data['product']??null;$category=$data['category']??null;
    $socialImage=$product&&$product->image?asset('storage/'.$product->image):($category&&$category->image?asset('storage/'.$category->image):null);
-   $noIndex=request()->routeIs('cart.*','checkout.*','admin.*','orders.track*')||(request()->routeIs('shop')&&request()->hasAny(['q','category','min_price','max_price','sort','in_stock']));
+   $catalogFiltered=request()->filled('q')||request()->filled('category')||request()->filled('min_price')||request()->filled('max_price')||request()->boolean('in_stock')||(request()->filled('sort')&&request('sort')!=='latest');
+   $noIndex=request()->routeIs('cart.*','checkout.*','admin.*','orders.track*')||(request()->routeIs('shop')&&$catalogFiltered);
    $view->with(['storeSettings'=>StoreSetting::current(),'socialImage'=>$socialImage,'noIndex'=>$noIndex]);
   });
  }
