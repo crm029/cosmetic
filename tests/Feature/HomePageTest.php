@@ -474,6 +474,8 @@ class HomePageTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'shipped', 'tracking_code' => '123456789012345']);
         $this->assertNotNull($order->fresh()->shipment_sms_sent_at);
         Http::assertSentCount(1);
+        $this->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])->assertRedirect();
+        Http::assertSentCount(1);
         $this->post('/order/track', ['order_number' => $order->order_number, 'mobile' => '09123456789'])
             ->assertOk()
             ->assertSee('123456789012345')
