@@ -191,7 +191,7 @@ class HomePageTest extends TestCase
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        $this->withServerVariables(['HTTPS' => 'on'])->get('/')
+        $this->get('https://localhost/')
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
