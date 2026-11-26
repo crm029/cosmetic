@@ -916,4 +916,123 @@ class HomePageTest extends TestCase
         Http::assertNothingSent();
     }
 
+
+    public function test_zarinpal_sandbox_request_uses_sandbox_urls_and_requires_s_prefixed_authority(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'e3f4743b-58e6-4e14-b61f-dd5b71e59355',
+            'services.zarinpal.base_url' => 'https://sandbox.zarinpal.com/pg/v4/payment',
+            'services.zarinpal.startpay_url' => 'https://sandbox.zarinpal.com/pg/StartPay',
+        ]);
+        Http::fake([
+            'sandbox.zarinpal.com/*' => Http::response(['data' => [
+                'code' => 100,
+                'authority' => 'S0000000000000000000000000000001',
+            ]], 200),
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-SANDBOX-REQUEST-01',
+            'customer_name' => 'مشتری سندباکس',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی آزمایش',
+            'subtotal' => 125000,
+            'shipping_amount' => 0,
+            'total' => 125000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $url = app(\App\Services\ZarinpalService::class)->requestPayment($order);
+
+        $this->assertSame('https://sandbox.zarinpal.com/pg/StartPay/S0000000000000000000000000000001', $url);
+        $this->assertSame('S0000000000000000000000000000001', $order->fresh()->payment_authority);
+        Http::assertSent(fn ($request) =>
+            $request->url() === 'https://sandbox.zarinpal.com/pg/v4/payment/request.json'
+            && $request['merchant_id'] === 'e3f4743b-58e6-4e14-b61f-dd5b71e59355'
+            && $request['amount'] === 1250000
+        );
+    }
+
+    public function test_zarinpal_sandbox_rejects_authority_without_s_prefix(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'e3f4743b-58e6-4e14-b61f-dd5b71e59355',
+            'services.zarinpal.base_url' => 'https://sandbox.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'sandbox.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'authority' => 'A0000000000000000000000000000001']], 200),
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-SANDBOX-BAD-AUTH-01', 'customer_name' => 'مشتری تست', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 50000, 'shipping_amount' => 0, 'total' => 50000,
+            'status' => 'pending', 'payment_status' => 'unpaid',
+        ]);
+
+        try {
+            app(\App\Services\ZarinpalService::class)->requestPayment($order);
+            $this->fail('Sandbox authority without S prefix must be rejected.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('باید با S شروع شود', $exception->getMessage());
+        }
+
+        $this->assertNull($order->fresh()->payment_authority);
+    }
+
+    public function test_zarinpal_inquiry_is_read_only_and_never_marks_order_paid(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'e3f4743b-58e6-4e14-b61f-dd5b71e59355',
+            'services.zarinpal.base_url' => 'https://sandbox.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'sandbox.zarinpal.com/*' => Http::response(['data' => [
+                'status' => 'PAID',
+                'code' => 100,
+                'message' => 'Success',
+            ], 'errors' => []], 200),
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-SANDBOX-INQUIRY-01', 'customer_name' => 'مشتری استعلام', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 80000, 'shipping_amount' => 0, 'total' => 80000,
+            'status' => 'pending', 'payment_status' => 'unpaid',
+            'payment_authority' => 'S0000000000000000000000000000002',
+        ]);
+
+        $result = app(\App\Services\ZarinpalService::class)->inquiry($order);
+
+        $this->assertSame('PAID', $result['status']);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'unpaid', 'status' => 'pending']);
+        Http::assertSent(fn ($request) =>
+            $request->url() === 'https://sandbox.zarinpal.com/pg/v4/payment/inquiry.json'
+            && $request['authority'] === $order->payment_authority
+            && !array_key_exists('amount', $request->data())
+        );
+    }
+
+    public function test_zarinpal_sandbox_verify_uses_verify_endpoint_and_accepts_verified_response(): void
+    {
+        config([
+            'services.zarinpal.merchant_id' => 'e3f4743b-58e6-4e14-b61f-dd5b71e59355',
+            'services.zarinpal.base_url' => 'https://sandbox.zarinpal.com/pg/v4/payment',
+        ]);
+        Http::fake([
+            'sandbox.zarinpal.com/*' => Http::response(['data' => ['code' => 100, 'ref_id' => 7654321]], 200),
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-SANDBOX-VERIFY-01', 'customer_name' => 'مشتری وریفای', 'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 95000, 'shipping_amount' => 0, 'total' => 95000,
+            'status' => 'pending', 'payment_status' => 'unpaid',
+            'payment_authority' => 'S0000000000000000000000000000003',
+        ]);
+
+        $result = app(\App\Services\ZarinpalService::class)->verify($order);
+
+        $this->assertSame(7654321, $result['ref_id']);
+        Http::assertSent(fn ($request) =>
+            $request->url() === 'https://sandbox.zarinpal.com/pg/v4/payment/verify.json'
+            && $request['amount'] === 950000
+            && $request['authority'] === $order->payment_authority
+        );
+    }
+
 }
