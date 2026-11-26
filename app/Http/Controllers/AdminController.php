@@ -15,7 +15,11 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 class AdminController extends Controller {
  public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orderCount'=>Order::count(),'unreadMessages'=>ContactMessage::where('is_read',false)->count(),'orders'=>Order::latest()->take(8)->get()]); }
- public function products(): View { return view('admin.products.index',['products'=>Product::with('category')->latest()->paginate(20)]); }
+ public function products(Request $request): View {
+  $filters=$request->validate(['q'=>['nullable','string','max:100'],'category_id'=>['nullable','integer','exists:categories,id'],'visibility'=>['nullable','in:active,inactive']]);
+  $products=Product::with('category')->when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('name','like',$term)->orWhere('sku','like',$term)->orWhere('slug','like',$term);});})->when(!empty($filters['category_id']),fn($q)=>$q->where('category_id',$filters['category_id']))->when(($filters['visibility']??null)==='active',fn($q)=>$q->where('is_active',true))->when(($filters['visibility']??null)==='inactive',fn($q)=>$q->where('is_active',false))->latest()->paginate(20)->withQueryString();
+  return view('admin.products.index',['products'=>$products,'categories'=>Category::orderBy('name')->get()]);
+ }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
   $data=$this->validatedProduct($request);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);if($galleryFiles)$data['gallery']=array_map(fn($file)=>$file->store('products/gallery','public'),$galleryFiles);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
@@ -52,7 +56,11 @@ class AdminController extends Controller {
  }
  public function messages(): View { return view('admin.messages.index',['messages'=>ContactMessage::latest()->paginate(25)]); }
  public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
- public function orders(): View { return view('admin.orders.index',['orders'=>Order::latest()->paginate(25)]); }
+ public function orders(Request $request): View {
+  $filters=$request->validate(['q'=>['nullable','string','max:100'],'status'=>['nullable','in:pending,processing,shipped,delivered,cancelled,paid_stock_issue'],'payment_status'=>['nullable','in:unpaid,paid,failed,refunded']]);
+  $orders=Order::when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('order_number','like',$term)->orWhere('customer_name','like',$term)->orWhere('mobile','like',$term);});})->when(!empty($filters['status']),fn($q)=>$q->where('status',$filters['status']))->when(!empty($filters['payment_status']),fn($q)=>$q->where('payment_status',$filters['payment_status']))->latest()->paginate(25)->withQueryString();
+  return view('admin.orders.index',compact('orders'));
+ }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
  public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,SmsService $sms) {
   if($order->payment_status!=='paid')return back()->withErrors(['stock'=>'فقط سفارش پرداخت‌شده قابل بررسی مجدد است.']);
