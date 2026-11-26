@@ -547,4 +547,20 @@ class HomePageTest extends TestCase
             ->assertSee('+4');
     }
 
+    public function test_admin_can_filter_low_stock_products_and_dashboard_counts_them(): void
+    {
+        $admin = User::create(['name' => 'مدیر انبار', 'mobile' => '09111111123', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        Product::create(['name' => 'موجودی کم', 'slug' => 'low-stock-product', 'price' => 100000, 'stock' => 3, 'is_active' => true]);
+        Product::create(['name' => 'موجودی کافی', 'slug' => 'healthy-stock-product', 'price' => 100000, 'stock' => 12, 'is_active' => true]);
+        Product::create(['name' => 'ناموجود انبار', 'slug' => 'empty-stock-product', 'price' => 100000, 'stock' => 0, 'is_active' => true]);
+
+        $this->actingAs($admin)->get('/admin/products?stock_status=low')
+            ->assertOk()
+            ->assertSee('موجودی کم')
+            ->assertDontSee('موجودی کافی')
+            ->assertDontSee('ناموجود انبار');
+
+        $this->get('/admin')->assertOk()->assertSee('محصولات با موجودی کم (1)');
+    }
+
 }
