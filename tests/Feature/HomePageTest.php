@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\StoreSetting;
+use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -139,6 +140,13 @@ class HomePageTest extends TestCase
         foreach ($product->gallery as $image) {
             Storage::disk('public')->assertExists($image);
         }
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'type' => 'initial',
+            'quantity' => 7,
+            'previous_stock' => 0,
+            'new_stock' => 7,
+        ]);
     }
 
     public function test_admin_can_upload_a_category_cover_image(): void
@@ -501,6 +509,34 @@ class HomePageTest extends TestCase
             ->assertRedirect('/cart')
             ->assertSessionHasErrors('cart')
             ->assertSessionHas('cart', []);
+    }
+
+    public function test_admin_stock_adjustments_are_recorded_in_inventory_history(): void
+    {
+        $admin = User::create(['name' => 'مدیر موجودی', 'mobile' => '09111111122', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'محصول انبار', 'slug' => 'inventory-item', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
+
+        $this->actingAs($admin)->put('/admin/products/'.$product->id, [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => $product->price,
+            'stock' => 9,
+            'is_active' => '1',
+        ])->assertRedirect('/admin/products');
+
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'type' => 'adjustment',
+            'quantity' => 4,
+            'previous_stock' => 5,
+            'new_stock' => 9,
+            'admin_user_id' => $admin->id,
+        ]);
+
+        $this->get('/admin/products/'.$product->id.'/stock')
+            ->assertOk()
+            ->assertSee('اصلاح دستی')
+            ->assertSee('+4');
     }
 
 }
