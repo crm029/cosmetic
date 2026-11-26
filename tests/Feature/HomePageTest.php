@@ -1329,4 +1329,68 @@ class HomePageTest extends TestCase
     }
 
 
+    public function test_admin_cannot_move_unpaid_order_into_fulfillment(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر تست',
+            'mobile' => '09123456780',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-UNPAID-STATUS-01',
+            'customer_name' => 'مشتری پرداخت‌نشده',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+            'status' => 'processing',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+    }
+
+    public function test_admin_cannot_cancel_paid_order_without_refund_workflow(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر تست دوم',
+            'mobile' => '09123456781',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-PAID-CANCEL-01',
+            'customer_name' => 'مشتری پرداخت‌شده',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+            'stock_deducted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+            'status' => 'cancelled',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+    }
+
+
 }
