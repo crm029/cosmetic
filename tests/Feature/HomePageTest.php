@@ -1458,4 +1458,58 @@ class HomePageTest extends TestCase
     }
 
 
+    public function test_admin_dashboard_recent_orders_open_the_order_details_page(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر داشبورد',
+            'mobile' => '09123456782',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-DASHBOARD-LINK-01',
+            'customer_name' => 'مشتری داشبورد',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 125000,
+            'shipping_amount' => 0,
+            'total' => 125000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.orders.show', $order), false)
+            ->assertSee('CS-DASHBOARD-LINK-01')
+            ->assertSee('پرداخت‌نشده');
+    }
+
+    public function test_admin_order_list_translates_all_known_payment_and_order_statuses(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر سفارش‌ها',
+            'mobile' => '09123456783',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-ORDER-LABELS-01',
+            'customer_name' => 'مشتری وضعیت',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 125000,
+            'shipping_amount' => 0,
+            'total' => 125000,
+            'status' => 'paid_stock_issue',
+            'payment_status' => 'paid',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.orders'))
+            ->assertOk()
+            ->assertSee('پرداخت‌شده')
+            ->assertSee('مشکل موجودی')
+            ->assertSee(route('admin.orders.show', $order), false);
+    }
+
 }
