@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   tests:
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          persist-credentials: true
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -35,6 +35,16 @@ jobs:
         run: composer validate --no-check-publish
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
+      - name: Commit generated Composer lockfile when missing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git add composer.lock
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: add reproducible Composer lockfile"
+            git push origin HEAD:main
+          fi
       - name: Preserve reproducible Composer lockfile
         uses: actions/upload-artifact@v4
         with:
