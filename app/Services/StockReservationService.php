@@ -36,7 +36,7 @@ class StockReservationService
             ->groupBy('product_id')
             ->map(fn ($rows) => (int) $rows->sum('quantity'));
 
-        if ($existing->all() === $items->mapWithKeys(fn ($qty, $id) => [(string) $id => $qty])->all()) {
+        if ($existing->map(fn ($qty) => (int) $qty)->all() === $items->map(fn ($qty) => (int) $qty)->all()) {
             return;
         }
 
