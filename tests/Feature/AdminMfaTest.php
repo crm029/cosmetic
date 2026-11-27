@@ -49,6 +49,20 @@ class AdminMfaTest extends TestCase
         $this->actingAs($admin->fresh())->get('/admin')->assertOk();
     }
 
+    public function test_active_admin_authenticator_cannot_be_replaced_through_setup_route(): void
+    {
+        $admin = $this->admin();
+        $activeSecret = app(TotpService::class)->generateSecret();
+        $pendingSecret = app(TotpService::class)->generateSecret();
+        $admin->forceFill(['totp_secret' => $activeSecret, 'totp_enabled_at' => now(), 'totp_last_used_step' => 0])->save();
+
+        $this->actingAs($admin)->withSession(['admin_totp_setup_secret' => $pendingSecret])
+            ->post('/admin/security/setup', ['code' => app(TotpService::class)->codeAt($pendingSecret, now()->timestamp)])
+            ->assertForbidden();
+
+        $this->assertSame($activeSecret, $admin->fresh()->totp_secret);
+    }
+
     public function test_totp_code_cannot_be_reused_to_verify_a_new_admin_session(): void
     {
         $admin = $this->admin();
