@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/store.css') }}">
     @stack('head')
-    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}" type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 </head>
 <body style="--ink: {{ $storeSettings->ink_color }}; --clay: {{ $storeSettings->accent_color }};">
     <div class="announcement">
@@ -102,7 +102,7 @@
         <small class="copyright">© {{ date('Y') }} {{ $storeSettings->store_name }} — تمامی حقوق محفوظ است.</small>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
-    <script type="module" src="{{ asset('assets/js/store.js') }}"></script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}" src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+    <script nonce="{{ request()->attributes->get('csp_nonce') }}" type="module" src="{{ asset('assets/js/store.js') }}"></script>
 </body>
 </html>
