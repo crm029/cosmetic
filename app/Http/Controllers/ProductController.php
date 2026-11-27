@@ -48,6 +48,9 @@ class ProductController extends Controller {
    ['@type'=>'ListItem','position'=>3,'name'=>$product->name,'item'=>url()->current()],
   ]];
   $relatedProducts=Product::with('category')->where('is_active',true)->where('id','!=',$product->id)->when($product->category_id,fn($q)=>$q->where('category_id',$product->category_id))->latest()->take(4)->get();
-  return view('shop.show',['product'=>$product,'availableStock'=>$availableStock,'relatedProducts'=>$relatedProducts,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
+  $approvedReviews=$product->approvedReviews()->with('user')->latest()->paginate(10);
+  $reviewStats=$product->approvedReviews()->selectRaw('COUNT(*) as count, AVG(rating) as average')->first();
+  if((int)$reviewStats->count>0)$productSchema['aggregateRating']=['@type'=>'AggregateRating','ratingValue'=>round((float)$reviewStats->average,1),'reviewCount'=>(int)$reviewStats->count,'bestRating'=>5,'worstRating'=>1];
+  return view('shop.show',['approvedReviews'=>$approvedReviews,'reviewStats'=>$reviewStats,'product'=>$product,'availableStock'=>$availableStock,'relatedProducts'=>$relatedProducts,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
  }
 }
