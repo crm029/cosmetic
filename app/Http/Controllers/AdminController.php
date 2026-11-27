@@ -223,8 +223,23 @@ class AdminController extends Controller {
     if(strlen($header)!==20||substr($header,0,4)!=='glTF'){$fail('فایل باید یک مدل معتبر GLB نسخه ۲ باشد.');return;}
     $version=unpack('V',substr($header,4,4))[1];$length=unpack('V',substr($header,8,4))[1];$chunkLength=unpack('V',substr($header,12,4))[1];
     if($version!==2||$length!==$file->getSize()||substr($header,16,4)!=='JSON'||$chunkLength<2||$chunkLength%4!==0||20+$chunkLength>$file->getSize()){$fail('ساختار فایل GLB معتبر نیست.');return;}
-    $handle=fopen($path,'rb');fseek($handle,20);$json=fread($handle,$chunkLength);fclose($handle);$document=json_decode($json,true);
-    if(!is_array($document)||($document['asset']['version']??null)!=='2.0')$fail('مدل سه‌بعدی باید با استاندارد glTF 2.0 سازگار باشد.');
+    $handle=fopen($path,'rb');fseek($handle,20);$json=fread($handle,$chunkLength);$document=json_decode($json,true);
+    if(!is_array($document)||($document['asset']['version']??null)!=='2.0'){$fail('مدل سه‌بعدی باید با استاندارد glTF 2.0 سازگار باشد.');fclose($handle);return;}
+    foreach(array_merge($document['buffers']??[],$document['images']??[]) as $resource){
+     if(isset($resource['uri'])&&!str_starts_with($resource['uri'],'data:')){$fail('مدل سه‌بعدی نباید به فایل‌های خارجی وابسته باشد.');fclose($handle);return;}
+    }
+    $hasBinaryChunk=false;$binaryLength=0;
+    if(20+$chunkLength<$file->getSize()){
+     fseek($handle,20+$chunkLength);$chunkHeader=fread($handle,8);
+     if(strlen($chunkHeader)!==8||substr($chunkHeader,4,4)!=="BIN\0"){$fail('بخش داده مدل GLB معتبر نیست.');fclose($handle);return;}
+     $binaryLength=unpack('V',substr($chunkHeader,0,4))[1];
+     if($binaryLength%4!==0||20+$chunkLength+8+$binaryLength!==$file->getSize()){$fail('طول بخش داده مدل GLB معتبر نیست.');fclose($handle);return;}
+     $hasBinaryChunk=true;
+    }
+    fclose($handle);
+    $buffer=$document['buffers'][0]??null;
+    if($buffer&&empty($buffer['uri'])&&(!$hasBinaryChunk||(int)($buffer['byteLength']??0)>$binaryLength||$binaryLength-(int)$buffer['byteLength']>3))$fail('داده هندسی مدل GLB ناقص است.');
+    if(!$buffer&&$hasBinaryChunk)$fail('ساختار بخش داده مدل GLB با فایل سازگار نیست.');
    }],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
    'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
