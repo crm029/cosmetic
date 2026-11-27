@@ -16,7 +16,20 @@ class SecurityHeadersTest extends TestCase
             ->assertHeader('X-Content-Type-Options', 'nosniff')
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-            ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+            ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+            ->assertHeader('Content-Security-Policy');
+    }
+
+
+    public function test_content_security_policy_uses_a_per_response_script_nonce(): void
+    {
+        $response = $this->get('/');
+
+        $policy = $response->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("script-src 'self' 'nonce-", $policy);
+        $this->assertStringNotContainsString("'unsafe-inline'", $policy);
+        $this->assertMatchesRegularExpression('/nonce="[^"]+"/', $response->getContent());
     }
 
     public function test_customer_and_admin_pages_are_not_cached(): void
