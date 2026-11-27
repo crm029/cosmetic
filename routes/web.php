@@ -62,7 +62,7 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::put('/products/{product}',[AdminController::class,'updateProduct'])->name('products.update');
  Route::delete('/products/{product}',[AdminController::class,'deleteProduct'])->name('products.delete');
 });
-Route::get('/robots.txt',fn()=>response("User-agent: *\nAllow: /\nDisallow: /account\nDisallow: /cart\nDisallow: /checkout\nDisallow: /admin\nSitemap: ".url('/sitemap.xml'),200)->header('Content-Type','text/plain'));
+Route::get('/robots.txt',fn()=>response("User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ".url('/sitemap.xml'),200)->header('Content-Type','text/plain'));
 Route::get('/sitemap.xml',function(){
  $urls=[['loc'=>route('home'),'priority'=>'1.0'],['loc'=>route('shop'),'priority'=>'0.9'],['loc'=>route('about'),'priority'=>'0.5'],['loc'=>route('faq'),'priority'=>'0.6'],['loc'=>route('privacy'),'priority'=>'0.3'],['loc'=>route('terms'),'priority'=>'0.3'],['loc'=>route('contact.index'),'priority'=>'0.5']];
  if(\Illuminate\Support\Facades\Schema::hasTable('categories'))foreach(\App\Models\Category::where('is_active',true)->get() as $category)$urls[]=['loc'=>route('categories.show',$category),'priority'=>'0.8','lastmod'=>$category->updated_at?->toAtomString()];
