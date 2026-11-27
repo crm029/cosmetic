@@ -28,7 +28,7 @@
 @php
 $statusOptions=match($order->status){
 'pending'=>['pending'=>'در انتظار','processing'=>'در حال آماده‌سازی']+($order->payment_status==='paid'?[]:['cancelled'=>'لغوشده']),
-'processing'=>['processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده'],
+'processing'=>$order->shipping_method==='pickup'?['processing'=>'در حال آماده‌سازی','delivered'=>'تحویل حضوری انجام شد']:['processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده'],
 'shipped'=>['shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده'],
 'delivered'=>['delivered'=>'تحویل‌شده'],
 default=>[],
