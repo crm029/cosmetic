@@ -13,7 +13,7 @@ class SmsService {
    $response=Http::timeout(15)->get($url,['FROM'=>$sender,'TO'=>$order->mobile,'TEXT'=>$message,'USERNAME'=>$username,'PASSWORD'=>$password,'DOMAIN'=>$domain]);
    if(!$response->successful()){Log::warning('0098SMS HTTP request failed',['status'=>$response->status()]);return false;}
    $body=trim($response->body());
-   if($body!=='0'){Log::warning('0098SMS returned an unrecognized or unsuccessful response',['response'=>$body]);return false;}
+   if($body!=='0'){Log::warning('0098SMS returned an unrecognized or unsuccessful response.');return false;}
    return true;
   } catch(\Throwable $e) {
    Log::warning('0098SMS request failed',['exception'=>$e::class]);return false;
