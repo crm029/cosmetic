@@ -225,7 +225,7 @@ class AdminController extends Controller {
    'orders'=>(clone $query)->latest()->paginate(20),
   ]);
  }
- public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
+ public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load(['items','statusHistory'])]); }
  public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,StockReservationService $reservations,SmsService $sms) {
   if($order->payment_status!=='paid'||in_array($order->status,['refund_required','cancelled'],true))return back()->withErrors(['stock'=>'این سفارش برای بازپرداخت علامت‌گذاری شده یا قابل آماده‌سازی نیست.']);
   try {
