@@ -43,7 +43,7 @@ class AdminMfaController extends Controller
     {
         $this->ensureAdmin($request);
         if (!$request->user()->totp_enabled_at) return redirect()->route('admin.mfa.setup');
-        if ($request->session()->boolean('admin_mfa_verified')) return redirect()->route('admin.dashboard');
+        if ((bool) $request->session()->get('admin_mfa_verified')) return redirect()->route('admin.dashboard');
         return view('admin.mfa-verify');
     }
 
