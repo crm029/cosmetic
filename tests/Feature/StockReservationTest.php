@@ -289,4 +289,28 @@ class StockReservationTest extends TestCase
     }
 
 
+
+    public function test_admin_inventory_filters_use_available_stock_after_reservations(): void
+    {
+        $admin = User::create(['name' => 'مدیر انبار', 'mobile' => '09123456786', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $soldOut = Product::create(['name' => 'محصول کاملاً رزروشده', 'slug' => 'fully-reserved-product', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
+        $lowStock = Product::create(['name' => 'محصول با موجودی آزاد کم', 'slug' => 'low-available-product', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
+        $firstOrder = $this->makeOrder([['product' => $soldOut, 'quantity' => 5]], 'CS-ADMIN-STOCK-FILTER-01');
+        $secondOrder = $this->makeOrder([['product' => $lowStock, 'quantity' => 2]], 'CS-ADMIN-STOCK-FILTER-02');
+        $service = app(StockReservationService::class);
+        $service->reserveForOrder($firstOrder);
+        $service->reserveForOrder($secondOrder);
+
+        $this->actingAs($admin)->get(route('admin.products', ['stock_status' => 'out']))
+            ->assertOk()
+            ->assertSee('محصول کاملاً رزروشده')
+            ->assertDontSee('محصول با موجودی آزاد کم');
+
+        $this->actingAs($admin)->get(route('admin.products', ['stock_status' => 'low']))
+            ->assertOk()
+            ->assertSee('محصول با موجودی آزاد کم')
+            ->assertDontSee('محصول کاملاً رزروشده');
+    }
+
+
 }
