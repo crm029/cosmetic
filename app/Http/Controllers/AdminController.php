@@ -94,7 +94,7 @@ class AdminController extends Controller {
     $reservations->reserveForOrder($locked);
     return $fulfillment->deductStock($locked);
    });
-  } catch(\\RuntimeException $e) {
+  } catch(\RuntimeException $e) {
    return back()->withErrors(['stock'=>$e->getMessage()]);
   }
   if(!$deducted)return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
