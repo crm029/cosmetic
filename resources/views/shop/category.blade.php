@@ -17,12 +17,12 @@
    'image'=>$product->image ? asset('storage/'.$product->image) : null,
   ])->map(fn($item)=>array_filter($item,fn($value)=>$value!==null))->all(),
  ]
-],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
 <script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
  ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
  ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
  ['@type'=>'ListItem','position'=>3,'name'=>$category->name,'item'=>url()->current()]
-]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
 @endpush
 @section('content')
 <section class="page-intro"><span class="eyebrow">THE COLLECTION</span><h1>{{ $category->name }}</h1><p>{{ $category->description ?: 'انتخاب‌هایی برای روتین مراقبت روزانه تو.' }}</p>@if($category->image)
