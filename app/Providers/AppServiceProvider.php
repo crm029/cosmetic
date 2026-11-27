@@ -2,12 +2,23 @@
 namespace App\Providers;
 use App\Models\StoreSetting;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider {
  public function register(): void {}
  public function boot(): void {
-  if($this->app->environment('production')) URL::forceScheme('https');
+  if($this->app->environment('production')) {
+   URL::forceScheme('https');
+   config(['session.secure'=>true,'session.http_only'=>true,'session.same_site'=>'lax']);
+  }
+  RateLimiter::for('admin-login',fn(Request $request)=>Limit::perMinute(5)->by('admin|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))));
+  RateLimiter::for('customer-otp-send',fn(Request $request)=>Limit::perMinutes(10,3)->by('otp-send|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))));
+  RateLimiter::for('customer-otp-verify',fn(Request $request)=>Limit::perMinutes(10,5)->by('otp-verify|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))));
+  RateLimiter::for('order-track',fn(Request $request)=>Limit::perMinute(5)->by('order-track|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))));
+  RateLimiter::for('order-payment-retry',fn(Request $request)=>Limit::perMinutes(10,3)->by('order-pay|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))));
   View::composer('layouts.app',function($view){
    $data=$view->getData();$product=$data['product']??null;$category=$data['category']??null;$storeSettings=StoreSetting::current();
    $productImage=data_get($product,'image');$categoryImage=data_get($category,'image');
