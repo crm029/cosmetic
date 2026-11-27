@@ -12,7 +12,7 @@ class ProductController extends Controller {
    'q'=>['nullable','string','max:100'],
    'category'=>['nullable','string','max:150'],
    'min_price'=>['nullable','integer','min:0'],
-   'max_price'=>['nullable','integer','min:0','gte:min_price'],
+   'max_price'=>['nullable','integer','min:0',function($attribute,$value,$fail)use($request){if($request->filled('min_price')&&(int)$value<(int)$request->input('min_price'))$fail('حداکثر قیمت باید بزرگ‌تر یا مساوی حداقل قیمت باشد.');}],
    'sort'=>['nullable','in:latest,price_asc,price_desc'],
    'in_stock'=>['nullable','boolean'],
   ]);
