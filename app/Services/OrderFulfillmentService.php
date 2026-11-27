@@ -4,6 +4,7 @@ use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\LoyaltyPointTransaction;
 use Illuminate\Support\Facades\DB;
 class OrderFulfillmentService {
  private function changeStatus(Order $order, string $status, string $note): void
@@ -67,6 +68,17 @@ class OrderFulfillmentService {
     DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['consumed_at'=>now(),'updated_at'=>now()]);
    }
    $lockedOrder->update(['stock_deducted_at'=>now()]);
+   if($lockedOrder->user_id){
+    $eligibleAmount=max(0,(int)$lockedOrder->subtotal-(int)$lockedOrder->discount_amount);
+    $points=intdiv($eligibleAmount,10000);
+    if($points>0 && !LoyaltyPointTransaction::where('order_id',$lockedOrder->id)->where('type','earned')->exists()){
+     $user=\App\Models\User::whereKey($lockedOrder->user_id)->lockForUpdate()->first();
+     if($user){
+      $user->increment('loyalty_points',$points);
+      LoyaltyPointTransaction::create(['user_id'=>$user->id,'order_id'=>$lockedOrder->id,'type'=>'earned','points'=>$points,'description'=>'امتیاز خرید سفارش '.$lockedOrder->order_number]);
+     }
+    }
+   }
    $this->changeStatus($lockedOrder, 'processing', 'پرداخت و کسر موجودی سفارش با موفقیت تأیید شد.');
    return true;
   });
