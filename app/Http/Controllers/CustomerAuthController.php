@@ -31,6 +31,7 @@ class CustomerAuthController extends Controller {
  }
  public function verify(Request $request) {
   $data=$request->validate(['mobile'=>['required','regex:/^09[0-9]{9}$/'],'code'=>['required','digits:6'],'name'=>['nullable','string','max:120']]);
+  if($request->session()->get('customer_otp_mobile')!==$data['mobile'])return back()->withErrors(['mobile'=>'ابتدا برای همین شماره درخواست کد تأیید کنید.']);
   $verification=PhoneVerification::where('mobile',$data['mobile'])->whereNull('consumed_at')->latest()->first();
   if(!$verification||$verification->expires_at->isPast()||$verification->attempts>=5||!Hash::check($data['code'],$verification->code_hash)){
    if($verification&&!$verification->consumed_at)$verification->increment('attempts');
