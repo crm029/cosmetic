@@ -161,8 +161,9 @@ class AdminController extends Controller {
  }
  public function reports(Request $request): View {
   $filters=$request->validate(['from'=>['nullable','date'],'to'=>['nullable','date','after_or_equal:from']]);
-  $start=!empty($filters['from'])?now()->parse($filters['from'])->startOfDay():now()->subDays(29)->startOfDay();
   $end=!empty($filters['to'])?now()->parse($filters['to'])->endOfDay():now()->endOfDay();
+  $start=!empty($filters['from'])?now()->parse($filters['from'])->startOfDay():$end->copy()->subDays(29)->startOfDay();
+  if($start->greaterThan($end))throw ValidationException::withMessages(['from'=>'تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.']);
   if($start->diffInDays($end)>365)throw ValidationException::withMessages(['to'=>'بازه گزارش نمی‌تواند بیشتر از ۳۶۵ روز باشد.']);
   $range=[$start,$end];
   $orders=Order::whereBetween('created_at',$range);
