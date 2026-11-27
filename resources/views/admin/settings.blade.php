@@ -9,7 +9,7 @@
 <label>نام فروشگاه<input name="store_name" value="{{ old('store_name',$settings->store_name) }}" maxlength="150" required></label>
 <label>شعار کوتاه فروشگاه<input name="tagline" value="{{ old('tagline',$settings->tagline) }}" maxlength="255"></label>
 <label class="full-field">لوگوی فروشگاه (حداکثر ۲ مگابایت)<input type="file" name="logo" accept="image/jpeg,image/png,image/webp,image/avif"></label>
-@if($settings->logo_path)<img class="settings-logo-preview" src="{{ asset('storage/'.$settings->logo_path) }}" alt="{{ $settings->store_name }}">@endif
+@if($settings->logo_path)<img class="settings-logo-preview" src="{{ asset('storage/'.$settings->logo_path) }}" alt="{{ $settings->store_name }}"><label class="full-field"><input type="checkbox" name="remove_logo" value="1"> حذف لوگوی فعلی</label>@endif
 <label>شماره پشتیبانی<input name="support_mobile" value="{{ old('support_mobile',$settings->support_mobile) }}" placeholder="09xxxxxxxxx"></label>
 <label>ایمیل پشتیبانی<input type="email" name="support_email" value="{{ old('support_email',$settings->support_email) }}"></label>
 <label class="full-field">نشانی فروشگاه<textarea name="address" rows="3">{{ old('address',$settings->address) }}</textarea></label>
