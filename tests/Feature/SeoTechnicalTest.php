@@ -31,6 +31,25 @@ class SeoTechnicalTest extends TestCase
             ->assertSee('"url":"'.route('products.show', $product).'"', false);
     }
 
+
+    public function test_untrusted_product_text_is_hex_encoded_inside_json_ld(): void
+    {
+        $payload = '</script><script>alert(1)</script>';
+        $product = Product::create([
+            'name' => $payload,
+            'slug' => 'xss-json-ld-product',
+            'short_description' => $payload,
+            'price' => 100000,
+            'stock' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertDontSee($payload, false)
+            ->assertSee('\\u003C/script\\u003E\\u003Cscript\\u003Ealert(1)\\u003C/script\\u003E', false);
+    }
+
     public function test_same_host_product_canonical_url_is_preserved(): void
     {
         $product = Product::create([
