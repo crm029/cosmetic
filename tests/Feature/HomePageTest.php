@@ -218,9 +218,10 @@ class HomePageTest extends TestCase
             'total' => 150000,
         ]);
 
-        $this->post('/order/track', [
+        $customer = User::create(['name' => 'مشتری آزمایشی', 'mobile' => '09123456789', 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post('/order/track', [
             'order_number' => $order->order_number,
-            'mobile' => '09123456789',
+            'mobile' => $customer->mobile,
         ])->assertOk()->assertSee($order->order_number);
     }
     public function test_admin_cannot_cancel_a_paid_order_without_refund(): void
@@ -637,7 +638,8 @@ class HomePageTest extends TestCase
         Http::assertSentCount(1);
         $this->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])->assertRedirect();
         Http::assertSentCount(1);
-        $this->post('/order/track', ['order_number' => $order->order_number, 'mobile' => '09123456789'])
+        $customer = User::create(['name' => 'مشتری ارسال', 'mobile' => '09123456789', 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post('/order/track', ['order_number' => $order->order_number, 'mobile' => $customer->mobile])
             ->assertOk()
             ->assertSee('123456789012345')
             ->assertSee('پست پیشتاز');
@@ -665,9 +667,10 @@ class HomePageTest extends TestCase
             'payment_status' => 'unpaid',
         ]);
 
-        $this->post('/order/'.$order->id.'/pay', [
+        $customer = User::create(['name' => 'مشتری پرداخت مجدد', 'mobile' => $order->mobile, 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post('/order/'.$order->id.'/pay', [
             'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
+            'mobile' => $customer->mobile,
         ])->assertRedirect('https://www.zarinpal.com/pg/StartPay/AUTH-RETRY-123');
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_authority' => 'AUTH-RETRY-123']);
@@ -1775,9 +1778,10 @@ class HomePageTest extends TestCase
             'line_total' => 300000,
         ]);
 
-        $this->post(route('orders.track.lookup'), [
+        $customer = User::create(['name' => $order->customer_name, 'mobile' => $order->mobile, 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post(route('orders.track.lookup'), [
             'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
+            'mobile' => $customer->mobile,
         ])->assertOk()
             ->assertSee('جمع کالاها')
             ->assertSee('هزینه ارسال')
