@@ -12,7 +12,7 @@ class ProductController extends Controller {
    'q'=>['nullable','string','max:100'],
    'category'=>['nullable','string','max:150'],
    'min_price'=>['nullable','integer','min:0'],
-   'max_price'=>['nullable','integer','min:0'],
+   'max_price'=>['nullable','integer','min:0','gte:min_price'],
    'sort'=>['nullable','in:latest,price_asc,price_desc'],
    'in_stock'=>['nullable','boolean'],
   ]);
