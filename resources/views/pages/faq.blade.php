@@ -6,7 +6,7 @@
  ['@type'=>'Question','name'=>'چطور سفارش را پیگیری کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'شماره سفارش و شماره موبایلی را که هنگام خرید ثبت کرده‌اید در صفحه پیگیری سفارش وارد کنید.']],
  ['@type'=>'Question','name'=>'اگر پرداخت نیمه‌کاره ماند چه کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'در صفحه پیگیری سفارش، شماره سفارش و موبایل را وارد کنید و اگر سفارش پرداخت‌نشده باشد، گزینه ادامه پرداخت را انتخاب کنید.']],
  ['@type'=>'Question','name'=>'اگر در خرید یا پرداخت مشکلی پیش آمد چه کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'از طریق صفحه تماس با ما پیام بفرستید و شماره سفارش را در متن پیام درج کنید.']]
- ]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+ ]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
 @endpush
 @section('content')
 <section class="page-intro"><span class="eyebrow">A LITTLE HELP</span><h1>پرسش‌های <em>متداول</em></h1><p>پاسخ چند سؤال رایج درباره خرید و پیگیری سفارش.</p></section>
