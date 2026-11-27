@@ -133,4 +133,36 @@ class StockReservationTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $available->id, 'stock' => 2]);
         $this->assertDatabaseHas('products', ['id' => $shortage->id, 'stock' => 1]);
     }
+
+    public function test_admin_cannot_reduce_stock_below_active_reservations(): void
+    {
+        $admin = User::create(['name' => 'مدیر رزرو', 'mobile' => '09123456780', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'کالای رزروشده', 'slug' => 'admin-reserved-stock', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
+        $order = $this->makeOrder([['product' => $product, 'quantity' => 4]], 'CS-ADMIN-RESERVE-01');
+        app(StockReservationService::class)->reserveForOrder($order);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => $product->price,
+            'stock' => 3,
+            'is_active' => true,
+        ])->assertSessionHasErrors('stock');
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
+    }
+
+    public function test_admin_cannot_delete_product_with_active_reservation(): void
+    {
+        $admin = User::create(['name' => 'مدیر حذف رزرو', 'mobile' => '09123456781', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'کالای در انتظار پرداخت', 'slug' => 'admin-delete-reserved', 'price' => 100000, 'stock' => 2, 'is_active' => true]);
+        $order = $this->makeOrder([['product' => $product, 'quantity' => 1]], 'CS-ADMIN-RESERVE-02');
+        app(StockReservationService::class)->reserveForOrder($order);
+
+        $this->actingAs($admin)->delete(route('admin.products.delete', $product))
+            ->assertSessionHasErrors('product');
+
+        $this->assertDatabaseHas('products', ['id' => $product->id]);
+    }
+
 }
