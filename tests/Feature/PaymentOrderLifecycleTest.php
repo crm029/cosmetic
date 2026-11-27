@@ -93,6 +93,7 @@ class PaymentOrderLifecycleTest extends TestCase
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
         $this->assertDatabaseCount('stock_movements', 1);
+        Http::assertSentCount(1);
     }
 
     public function test_customer_cancelled_payment_releases_reservation_without_marking_order_paid(): void
