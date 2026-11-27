@@ -1589,4 +1589,11 @@ class HomePageTest extends TestCase
             ->assertDontSee($reserved->name);
     }
 
+    public function test_shop_rejects_an_invalid_price_range(): void
+    {
+        $this->get(route('shop', ['min_price' => 200000, 'max_price' => 100000]))
+            ->assertRedirect()
+            ->assertSessionHasErrors('max_price');
+    }
+
 }
