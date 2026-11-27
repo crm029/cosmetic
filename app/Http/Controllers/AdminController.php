@@ -328,14 +328,14 @@ class AdminController extends Controller {
   if($data['status']==='shipped')$sms->sendShipmentUpdateOnce($order->fresh());
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
- public function coupons(): View { return view('admin.coupons.index',['coupons'=>\\App\\Models\\Coupon::latest()->paginate(30)]); }
+ public function coupons(): View { return view('admin.coupons.index',['coupons'=>\App\Models\Coupon::latest()->paginate(30)]); }
  public function storeCoupon(Request $request) {
   $data=$request->validate(['code'=>['required','string','max:40','regex:/^[A-Za-z0-9_-]+$/','unique:coupons,code'],'type'=>['required','in:fixed,percent'],'value'=>['required','integer','min:1'],'minimum_order_toman'=>['required','integer','min:0','max:1000000000'],'maximum_discount_toman'=>['nullable','integer','min:1','max:1000000000'],'usage_limit'=>['nullable','integer','min:1','max:1000000'],'starts_at'=>['nullable','date'],'expires_at'=>['nullable','date','after_or_equal:starts_at'],'is_active'=>['nullable','boolean']]);
   if($data['type']==='percent'&&$data['value']>100)throw ValidationException::withMessages(['value'=>'درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.']);
-  $data['code']=strtoupper($data['code']);$data['is_active']=$request->boolean('is_active');\\App\\Models\\Coupon::create($data);
+  $data['code']=strtoupper($data['code']);$data['is_active']=$request->boolean('is_active');\App\Models\Coupon::create($data);
   return back()->with('success','کد تخفیف ساخته شد.');
  }
- public function toggleCoupon(\\App\\Models\\Coupon $coupon) { $coupon->update(['is_active'=>!$coupon->is_active]);return back()->with('success','وضعیت کد تخفیف تغییر کرد.'); }
+ public function toggleCoupon(\App\Models\Coupon $coupon) { $coupon->update(['is_active'=>!$coupon->is_active]);return back()->with('success','وضعیت کد تخفیف تغییر کرد.'); }
  private function validatedProduct(Request $request,?Product $product=null): array {
   return $request->validate([
    'category_id'=>['nullable','exists:categories,id'],'name'=>['required','string','max:190'],
