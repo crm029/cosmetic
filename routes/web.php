@@ -46,6 +46,8 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::put('/settings',[AdminController::class,'updateSettings'])->name('settings.update');
  Route::get('/messages',[AdminController::class,'messages'])->name('messages');
  Route::patch('/messages/{message}/read',[AdminController::class,'markMessageRead'])->name('messages.read');
+ Route::get('/customers',[AdminController::class,'customers'])->name('customers');
+ Route::get('/customers/{mobile}',[AdminController::class,'showCustomer'])->name('customers.show');
  Route::get('/orders',[AdminController::class,'orders'])->name('orders');
  Route::get('/orders/{order}',[AdminController::class,'showOrder'])->name('orders.show');
  Route::patch('/orders/{order}',[AdminController::class,'updateOrderStatus'])->name('orders.update');
