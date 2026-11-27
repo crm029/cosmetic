@@ -17,14 +17,16 @@ class CartController extends Controller {
   $data=$request->validate(['quantity'=>['nullable','integer','min:1','max:20']]);
   $quantity=(int)($data['quantity']??1);$cart=$request->session()->get('cart',[]);
   $new=(int)($cart[$product->id]??0)+$quantity;
-  if($new>$product->stock)return back()->withErrors(['cart'=>'تعداد انتخاب‌شده بیشتر از موجودی محصول است.']);
+  $reserved=(int)DB::table('stock_reservations')->where('product_id',$product->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+  if($new>$product->stock-$reserved)return back()->withErrors(['cart'=>'تعداد انتخاب‌شده بیشتر از موجودی محصول است.']);
   $cart[$product->id]=$new;$request->session()->put('cart',$cart);
   return redirect()->route('cart.index')->with('success','محصول به سبد خرید اضافه شد.');
  }
  public function update(Request $request, Product $product): RedirectResponse {
   $data=$request->validate(['quantity'=>['required','integer','min:1','max:20']]);
   if(!$product->is_active){$cart=$request->session()->get('cart',[]);unset($cart[$product->id]);$request->session()->put('cart',$cart);return back()->withErrors(['cart'=>'این محصول دیگر برای فروش فعال نیست و از سبد خرید حذف شد.']);}
-  if($data['quantity']>$product->stock)return back()->withErrors(['cart'=>'موجودی کافی نیست.']);
+  $reserved=(int)DB::table('stock_reservations')->where('product_id',$product->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+  if($data['quantity']>$product->stock-$reserved)return back()->withErrors(['cart'=>'موجودی آزاد کافی نیست؛ بخشی از موجودی برای سفارش‌های دیگر رزرو شده است.']);
   $cart=$request->session()->get('cart',[]);$cart[$product->id]=$data['quantity'];$request->session()->put('cart',$cart);
   return back()->with('success','سبد خرید به‌روزرسانی شد.');
  }
