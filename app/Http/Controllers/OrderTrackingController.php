@@ -18,6 +18,7 @@ class OrderTrackingController extends Controller {
  }
  public function retryPayment(Request $request,Order $order,ZarinpalService $gateway,StockReservationService $reservations): RedirectResponse {
   $data=$request->validate(['order_number'=>['required','string','max:40'],'mobile'=>['required','regex:/^09[0-9]{9}$/']]);
+  abort_unless($request->user() && !$request->user()->is_admin && hash_equals((string)$request->user()->mobile, $data['mobile']), 404);
   if(!hash_equals($order->order_number,strtoupper(trim($data['order_number'])))||!hash_equals($order->mobile,$data['mobile']))abort(404);
   if(in_array($order->payment_status,['paid','refunded'],true)||in_array($order->status,['cancelled','refund_required','paid_stock_issue'],true))return back()->withErrors(['payment'=>'این سفارش امکان پرداخت مجدد ندارد.']);
   try {
