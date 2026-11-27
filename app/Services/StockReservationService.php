@@ -15,7 +15,11 @@ class StockReservationService
             fn ($rows) => (int) $rows->sum('quantity')
         );
 
-        if ($items->isEmpty() || $items->keys()->contains(null)) {
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        if ($items->keys()->contains(null)) {
             throw new RuntimeException('اقلام سفارش برای رزرو موجودی معتبر نیستند.');
         }
 
