@@ -6,9 +6,9 @@
     <title>{{ $seoTitle ?? $storeSettings->store_name }}</title>
     <meta name="description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی و مراقبت پوست و مو.' }}">
     <meta name="robots" content="{{ $noIndex ? 'noindex,nofollow' : 'index,follow' }}">
-    <link rel="canonical" href="{{ isset($product) && $product->canonical_url ? $product->canonical_url : request()->url() }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta name="theme-color" content="#f4eee8">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="{{ isset($product) ? 'product' : 'website' }}">
     <meta property="og:title" content="{{ $seoTitle ?? $storeSettings->store_name }}">
     <meta property="og:description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی.' }}">
     @if($socialImage)
