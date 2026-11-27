@@ -18,8 +18,13 @@
 <button class="button button-dark" type="submit">ثبت بازپرداخت انجام‌شده</button>
 </form>
 @endif
+@if(in_array($order->status,['paid_stock_issue','refund_required','cancelled'],true))
+<p class="notice-error">@if($order->status==='paid_stock_issue')تا زمان رفع مشکل موجودی، تغییر وضعیت سفارش غیرفعال است.@elseif($order->status==='refund_required')تا زمان ثبت بازپرداخت، تغییر وضعیت سفارش غیرفعال است.@else این سفارش لغو شده و امکان فعال‌سازی مجدد آن وجود ندارد.@endif</p>
+@else
 <form method="POST" action="{{ route('admin.orders.update',$order) }}" class="order-status-form">@csrf @method('PATCH')
 <label>شرکت یا روش ارسال<input name="shipping_carrier" value="{{ old('shipping_carrier',$order->shipping_carrier) }}" maxlength="100" placeholder="پست، تیپاکس، پیک فروشگاه..."></label>
 <label>کد رهگیری مرسوله<input name="tracking_code" value="{{ old('tracking_code',$order->tracking_code) }}" maxlength="120"></label>
-<label>وضعیت سفارش<select name="status">@foreach(['pending'=>'در انتظار','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده'] as $value=>$label)<option value="{{ $value }}" @selected($order->status===$value)>{{ $label }}</option>@endforeach</select></label><button class="button button-dark">ذخیره وضعیت</button></form></div></section>
+<label>وضعیت سفارش<select name="status">@foreach(['pending'=>'در انتظار','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده'] as $value=>$label)<option value="{{ $value }}" @selected($order->status===$value)>{{ $label }}</option>@endforeach</select></label><button class="button button-dark">ذخیره وضعیت</button></form>
+@endif
+</div></section>
 @endsection
