@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   tests:
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
+          persist-credentials: false
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -35,16 +35,6 @@ jobs:
         run: composer validate --no-check-publish
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
-      - name: Commit generated Composer lockfile when missing
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git add composer.lock
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: add reproducible Composer lockfile"
-            git push origin HEAD:main
-          fi
       - name: Preserve reproducible Composer lockfile
         uses: actions/upload-artifact@v4
         with:
@@ -68,3 +58,33 @@ jobs:
         run: php artisan view:cache
       - name: Run feature tests
         run: php artisan test
+
+  lockfile:
+    name: Generate and commit Composer lockfile
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, bcmath, gd, fileinfo, openssl, ctype, tokenizer, xml, curl
+          coverage: none
+      - name: Generate lockfile only when absent
+        run: |
+          if [ ! -f composer.lock ]; then
+            composer update --no-interaction --prefer-dist --no-install --no-scripts
+            composer validate --no-check-publish
+            git add composer.lock
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: add reproducible Composer lockfile"
+            git push origin HEAD:main
+          fi
