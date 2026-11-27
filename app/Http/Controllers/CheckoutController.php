@@ -38,7 +38,8 @@ class CheckoutController extends Controller {
   return view('checkout.index',compact('products','cart','subtotal','shipping','total','coupon','discount','shippingMethod','settings'));
  }
  public function store(Request $request,ZarinpalService $gateway,StockReservationService $reservations): RedirectResponse {
-  $data=$request->validate(['customer_name'=>['required','string','max:120'],'mobile'=>['required','regex:/^09[0-9]{9}$/'],'email'=>['nullable','email','max:190'],'shipping_address'=>['required','string','min:10','max:1500'],'notes'=>['nullable','string','max:1000'],'shipping_method'=>['required','in:post,pickup']]);
+  $data=$request->validate(['customer_name'=>['required','string','max:120'],'mobile'=>['required','regex:/^09[0-9]{9}$/'],'email'=>['nullable','email','max:190'],'shipping_address'=>['required','string','min:10','max:1500'],'notes'=>['nullable','string','max:1000'],'shipping_method'=>['sometimes','in:post,pickup']]);
+  $data['shipping_method']=$data['shipping_method']??'post';
   $cart=$request->session()->get('cart',[]);if(!$cart)return redirect()->route('cart.index');
   if(!is_array($cart)||count($cart)>50)return redirect()->route('cart.index')->withErrors(['cart'=>'سبد خرید معتبر نیست؛ لطفاً دوباره محصولات را انتخاب کنید.']);
   foreach($cart as $quantity){if(!is_numeric($quantity)||(int)$quantity<1||(int)$quantity>20)return redirect()->route('cart.index')->withErrors(['cart'=>'تعداد هر محصول باید بین ۱ تا ۲۰ عدد باشد.']);}
