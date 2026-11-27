@@ -23,7 +23,7 @@ class SecurityHeadersTest extends TestCase
     {
         foreach (['/admin/login', '/cart', '/checkout', '/order/track'] as $path) {
             $this->get($path)
-                ->assertHeader('Cache-Control', 'no-store, private, max-age=0')
+                ->assertHeader('Cache-Control', 'max-age=0, no-store, private')
                 ->assertHeader('Pragma', 'no-cache')
                 ->assertHeader('Expires', '0');
         }
