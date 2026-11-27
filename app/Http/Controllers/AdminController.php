@@ -281,6 +281,27 @@ class AdminController extends Controller {
   $sms->sendOrderPaidOnce($order->fresh());
   return back()->with('success','رزرو تازه ثبت شد، موجودی سفارش کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
+ public function retryOrderSms(Order $order,string $type,SmsService $sms) {
+  $sentColumn=match($type){'payment'=>'sms_sent_at','shipment'=>'shipment_sms_sent_at','delivery'=>'delivery_sms_sent_at',default=>null};
+  if(!$sentColumn)return back()->withErrors(['sms'=>'نوع پیامک معتبر نیست.']);
+  $eligible=match($type){
+   'payment'=>$order->payment_status==='paid'&&!in_array($order->status,['refund_required','cancelled'],true),
+   'shipment'=>$order->payment_status==='paid'&&in_array($order->status,['shipped','delivered'],true),
+   'delivery'=>$order->payment_status==='paid'&&$order->status==='delivered',
+   default=>false,
+  };
+  if(!$eligible)return back()->withErrors(['sms'=>'با وضعیت فعلی سفارش، ارسال این پیامک مجاز نیست.']);
+  $order->refresh();
+  if($order->{$sentColumn})return back()->with('success','این پیامک قبلاً با موفقیت ثبت شده است و دوباره ارسال نشد.');
+  $sent=match($type){
+   'payment'=>$sms->sendOrderPaidOnce($order),
+   'shipment'=>$sms->sendShipmentUpdateOnce($order),
+   'delivery'=>$sms->sendDeliveryUpdateOnce($order),
+  };
+  return $sent
+   ? back()->with('success','پیامک با موفقیت ارسال و ثبت شد.')
+   : back()->withErrors(['sms'=>'ارسال پیامک تأیید نشد. تنظیمات و اعتبار پنل پیامکی را بررسی کن و دوباره تلاش کن.']);
+ }
  public function recordRefund(Request $request,Order $order) {
   $data=$request->validate(['refund_ref_id'=>['required','string','max:120'],'refund_note'=>['required','string','min:5','max:1000']]);
   $error=DB::transaction(function()use($order,$data){
