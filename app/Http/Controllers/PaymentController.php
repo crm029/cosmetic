@@ -7,11 +7,11 @@ use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 class PaymentController extends Controller {
- public function callback(Request $request,ZarinpalService $gateway,SmsService $sms,OrderFulfillmentService $fulfillment) {
+ public function callback(Request $request,ZarinpalService $gateway,SmsService $sms,OrderFulfillmentService $fulfillment,StockReservationService $reservations) {
   $authority=(string)$request->query('Authority','');$status=(string)$request->query('Status','');
   $order=Order::where('payment_authority',$authority)->first();
   if(!$order)return redirect()->route('home')->withErrors(['payment'=>'سفارش پرداخت‌شده پیدا نشد.']);
-  if(strtoupper($status)!=='OK')return redirect()->route('home')->withErrors(['payment'=>'پرداخت توسط کاربر لغو شد یا ناموفق بود.']);
+  if(strtoupper($status)!=='OK'){DB::transaction(function()use($order,$reservations){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);});return redirect()->route('home')->withErrors(['payment'=>'پرداخت توسط کاربر لغو شد یا ناموفق بود.']);}
   try {
    $verifiedData=null;
    if(!in_array($order->payment_status,['paid','refunded'],true)) {
