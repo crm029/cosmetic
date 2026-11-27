@@ -5,15 +5,29 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 class OrderFulfillmentService {
+ private function changeStatus(Order $order, string $status, string $note): void
+ {
+  $previous = $order->status;
+  if ($previous === $status) return;
+  $order->update(['status' => $status]);
+  OrderStatusHistory::create([
+   'order_id' => $order->id,
+   'from_status' => $previous,
+   'to_status' => $status,
+   'actor_type' => 'system',
+   'note' => $note,
+  ]);
+ }
+
  public function deductStock(Order $order): bool {
   return DB::transaction(function()use($order){
    $lockedOrder=Order::whereKey($order->id)->lockForUpdate()->first();
    if($lockedOrder->stock_deducted_at)return true;
    if($lockedOrder->payment_status!=='paid'||$lockedOrder->status==='refund_required')return false;
-   if($lockedOrder->status==='cancelled'){$lockedOrder->update(['status'=>'refund_required']);return false;}
+   if($lockedOrder->status==='cancelled'){$this->changeStatus($lockedOrder, 'refund_required', 'پرداخت پس از لغو سفارش تأیید شد؛ بازپرداخت لازم است.');return false;}
    $requiredByProduct=$lockedOrder->items()->get()->groupBy('product_id')->map(fn($items)=>(int)$items->sum('quantity'));
    if($requiredByProduct->isEmpty()){
-    $lockedOrder->update(['status'=>'paid_stock_issue']);
+    $this->changeStatus($lockedOrder, 'paid_stock_issue', 'کسر موجودی سفارش با مشکل مواجه شد و نیاز به بررسی دارد.');
     return false;
    }
    $products=Product::whereIn('id',$requiredByProduct->keys())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
@@ -51,7 +65,7 @@ class OrderFulfillmentService {
    if($reservations->isNotEmpty()){
     DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['consumed_at'=>now(),'updated_at'=>now()]);
    }
-   $lockedOrder->update(['stock_deducted_at'=>now(),'status'=>'processing']);
+   $lockedOrder->update(['stock_deducted_at'=>now()]);\n   $this->changeStatus($lockedOrder, 'processing', 'پرداخت و کسر موجودی سفارش با موفقیت تأیید شد.');
    return true;
   });
  }
