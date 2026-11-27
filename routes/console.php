@@ -17,3 +17,8 @@ Schedule::call(fn () => app(\App\Services\StockReservationService::class)->relea
  ->everyMinute()
  ->name('release-expired-stock-reservations')
  ->withoutOverlapping();
+
+Schedule::call(fn () => \\App\\Models\\PhoneVerification::where('expires_at', '<', now()->subDay())->delete())
+ ->daily()
+ ->name('prune-expired-phone-verifications')
+ ->withoutOverlapping();
