@@ -13,12 +13,12 @@ class SecurityHardeningTest extends TestCase
     {
         $this->get('/account')
             ->assertRedirect('/account/login')
-            ->assertHeader('Cache-Control', 'no-store, private, max-age=0')
+            ->assertHeader('Cache-Control', 'max-age=0, no-store, private')
             ->assertHeader('X-Frame-Options', 'DENY');
 
         $this->get('/account/login')
             ->assertOk()
-            ->assertHeader('Cache-Control', 'no-store, private, max-age=0');
+            ->assertHeader('Cache-Control', 'max-age=0, no-store, private');
     }
 
     public function test_admin_login_is_rate_limited_per_mobile_and_ip(): void
