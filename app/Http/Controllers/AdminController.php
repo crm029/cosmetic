@@ -241,7 +241,14 @@ class AdminController extends Controller {
     $locked=Order::whereKey($order->id)->lockForUpdate()->first();
     if($locked&&$locked->payment_status==='paid'&&!$locked->stock_deducted_at){
      $reservations->releaseForOrder($locked);
+     $previousStatus=$locked->status;
      $locked->update(['status'=>'paid_stock_issue']);
+     if($previousStatus!=='paid_stock_issue'){
+      OrderStatusHistory::create([
+       'order_id'=>$locked->id,'from_status'=>$previousStatus,'to_status'=>'paid_stock_issue',
+       'actor_type'=>'system','note'=>'تلاش برای تطبیق موجودی ناموفق بود: '.$e->getMessage(),
+      ]);
+     }
     }
    });
    return back()->withErrors(['stock'=>$e->getMessage()]);
