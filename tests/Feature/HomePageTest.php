@@ -1354,9 +1354,10 @@ class HomePageTest extends TestCase
             'payment_status' => 'paid',
         ]);
 
-        $this->post(route('orders.pay.retry', $order), [
+        $customer = User::create(['name' => $order->customer_name, 'mobile' => $order->mobile, 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post(route('orders.pay.retry', $order), [
             'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
+            'mobile' => $customer->mobile,
         ])->assertSessionHasErrors('payment');
 
         $this->assertDatabaseHas('orders', [
