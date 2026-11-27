@@ -75,6 +75,17 @@ class AdminMfaTest extends TestCase
         $this->get('/admin')->assertRedirect(route('admin.mfa.setup'));
     }
 
+    public function test_totp_secret_is_encrypted_at_rest_and_hidden_from_serialization(): void
+    {
+        $admin = $this->admin();
+        $secret = app(TotpService::class)->generateSecret();
+        $admin->forceFill(['totp_secret' => $secret, 'totp_enabled_at' => now()])->save();
+
+        $this->assertNotSame($secret, $admin->getRawOriginal('totp_secret'));
+        $this->assertSame($secret, $admin->fresh()->totp_secret);
+        $this->assertArrayNotHasKey('totp_secret', $admin->fresh()->toArray());
+    }
+
     public function test_mfa_recovery_requires_confirmed_server_console_command(): void
     {
         $admin = $this->admin();
