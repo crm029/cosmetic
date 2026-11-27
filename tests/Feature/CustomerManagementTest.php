@@ -43,7 +43,7 @@ class CustomerManagementTest extends TestCase
         $this->order('CUS-002', 'مشتری الف', '09111111111', 'unpaid', 50000);
         $this->order('CUS-003', 'مشتری ب', '09222222222', 'paid', 70000);
 
-        $this->actingAs($admin)->get(route('admin.customers', ['q' => '09111111111']))
+        $this->actingAsAdmin($admin)->get(route('admin.customers', ['q' => '09111111111']))
             ->assertOk()
             ->assertSee('مشتری الف')
             ->assertSee('09111111111')
@@ -58,7 +58,7 @@ class CustomerManagementTest extends TestCase
         $this->order('CUS-DETAIL-02', 'مشتری جزئیات', '09333333333', 'unpaid', 80000);
         $this->order('CUS-OTHER-01', 'مشتری دیگر', '09444444444', 'paid', 99000);
 
-        $this->actingAs($admin)->get(route('admin.customers.show', '09333333333'))
+        $this->actingAsAdmin($admin)->get(route('admin.customers.show', '09333333333'))
             ->assertOk()
             ->assertSee('CUS-DETAIL-01')
             ->assertSee('CUS-DETAIL-02')
