@@ -27,7 +27,7 @@ class CustomerAuthController extends Controller {
   PhoneVerification::where('mobile',$mobile)->whereNull('consumed_at')->delete();
   PhoneVerification::create(['mobile'=>$mobile,'code_hash'=>Hash::make($code),'expires_at'=>now()->addMinutes(5)]);
   $request->session()->put('customer_otp_mobile',$mobile);
-  return back()->with('otp_sent','کد تأیید پنج‌رقمی/شش‌رقمی برای شما ارسال شد.');
+  return back()->with('otp_sent','کد شش‌رقمی تأیید برای شما ارسال شد.');
  }
  public function verify(Request $request) {
   $data=$request->validate(['mobile'=>['required','regex:/^09[0-9]{9}$/'],'code'=>['required','digits:6'],'name'=>['nullable','string','max:120']]);
@@ -48,8 +48,9 @@ class CustomerAuthController extends Controller {
   Auth::login($user);$request->session()->regenerate();$request->session()->forget('customer_otp_mobile');
   return redirect()->intended(route('account.index'))->with('success','ورود شما با موفقیت انجام شد.');
  }
- public function index(): View {
-  abort_unless(auth()->check()&&!auth()->user()->is_admin,403);
+ public function index(): View|\\Illuminate\\Http\\RedirectResponse {
+  if(!auth()->check())return redirect()->route('customer.login');
+  abort_if(auth()->user()->is_admin,403);
   $orders=Order::where('user_id',auth()->id())->with('items')->latest()->paginate(10);
   return view('account.index',compact('orders'));
  }
