@@ -5,6 +5,10 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch: {}
+
+permissions:
+  contents: read
+
 jobs:
   tests:
     name: Validate Laravel application
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
