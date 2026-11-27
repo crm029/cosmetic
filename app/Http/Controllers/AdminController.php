@@ -326,6 +326,7 @@ class AdminController extends Controller {
   });
   if($error)return back()->withErrors(['status'=>$error]);
   if($data['status']==='shipped')$sms->sendShipmentUpdateOnce($order->fresh());
+  if($data['status']==='delivered')$sms->sendDeliveryUpdateOnce($order->fresh());
   return back()->with('success','وضعیت سفارش به‌روزرسانی شد.');
  }
  public function coupons(): View { return view('admin.coupons.index',['coupons'=>\App\Models\Coupon::latest()->paginate(30)]); }
