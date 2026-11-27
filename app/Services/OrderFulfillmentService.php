@@ -25,9 +25,19 @@ class OrderFulfillmentService {
      }
     }
    }
+   $reservedElsewhere=[];
+   if($reservations->isEmpty()){
+    $reservedElsewhere=DB::table('stock_reservations')
+     ->whereIn('product_id',$requiredByProduct->keys())
+     ->where('order_id','!=',$lockedOrder->id)
+     ->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())
+     ->select('product_id',DB::raw('SUM(quantity) as reserved_quantity'))
+     ->groupBy('product_id')->pluck('reserved_quantity','product_id')->all();
+   }
    foreach($requiredByProduct as $productId=>$quantity){
     $product=$products->get($productId);
-    if(!$product||$product->stock<$quantity){$lockedOrder->update(['status'=>'paid_stock_issue']);return false;}
+    $freeStock=$product?(int)$product->stock-(int)($reservedElsewhere[$productId]??0):0;
+    if(!$product||$freeStock<$quantity){$lockedOrder->update(['status'=>'paid_stock_issue']);return false;}
    }
    foreach($requiredByProduct as $productId=>$quantity){
     $product=$products->get($productId);$previous=(int)$product->stock;
