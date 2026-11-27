@@ -42,11 +42,13 @@
             <a href="{{ route('home') }}">خانه</a>
             <a href="{{ route('shop') }}">فروشگاه</a>
             <a href="{{ route('orders.track') }}">پیگیری سفارش</a>
+            <a href="{{ route('account.index') }}">حساب من</a>
             <a href="{{ route('about') }}">داستان ما</a>
             <a href="{{ route('contact.index') }}">ارتباط</a>
         </nav>
         <div class="header-actions">
             <a href="{{ route('shop') }}" aria-label="جستجو">⌕</a>
+            <a href="{{ auth()->check()&&!auth()->user()->is_admin?route('account.index'):route('customer.login') }}">{{ auth()->check()&&!auth()->user()->is_admin?'حساب کاربری':'ورود مشتری' }}</a>
             <a class="bag-link" href="{{ route('cart.index') }}">سبد خرید <span>{{ array_sum(session('cart',[])) }}</span></a>
         </div>
     </header>
