@@ -4,8 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 function createRenderer(container,interactive=false){
  if(!window.WebGLRenderingContext)throw new Error('WebGL is unavailable');
- const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
- renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const renderer=new THREE.WebGLRenderer({alpha:true,antialias:window.innerWidth>700,powerPreference:'low-power'});
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,window.innerWidth<620?1.1:1.35));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:'+(interactive?'auto':'none')+';z-index:1';
  container.appendChild(renderer.domElement);return renderer;
 }
@@ -16,7 +16,7 @@ function addLights(scene){
 }
 function makeLabelTexture(){
  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=280;
- const ctx=canvas.getContext('2d');ctx.fillStyle='#f4e9de';ctx.fillRect(0,0,512,280);
+ const ctx=canvas.getContext('2d');if(!ctx)return null;ctx.fillStyle='#f4e9de';ctx.fillRect(0,0,512,280);
  ctx.strokeStyle='#b18b65';ctx.lineWidth=3;ctx.strokeRect(18,18,476,244);
  ctx.textAlign='center';ctx.fillStyle='#5b463b';ctx.font='italic 34px Georgia';ctx.fillText('THE BEAUTY EDIT',256,100);
  ctx.fillStyle='#927564';ctx.font='500 23px Arial';ctx.fillText('SKINCARE',256,155);
@@ -29,7 +29,7 @@ function makeBottle(scene,{x=0,y=0,scale=1,tint=0xd6b7a8}={}){
  const group=new THREE.Group();group.position.set(x,y,0);group.scale.setScalar(scale);scene.add(group);
  const glass=new THREE.MeshPhysicalMaterial({color:tint,metalness:.12,roughness:.2,transparent:true,opacity:.94,clearcoat:1,clearcoatRoughness:.12});
  const gold=new THREE.MeshStandardMaterial({color:0xb18b65,metalness:.78,roughness:.23});
- const label=new THREE.MeshStandardMaterial({map:labelTexture,roughness:.8});
+ const label=new THREE.MeshStandardMaterial({map:labelTexture||null,roughness:.8,color:labelTexture?0xffffff:0xf4e9de});
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.62,.58,2.15,48,1,false),glass);body.position.y=-.1;group.add(body);
  const shoulder=new THREE.Mesh(new THREE.CylinderGeometry(.28,.58,.38,48),glass);shoulder.position.y=1.16;group.add(shoulder);
  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.28,32),gold);neck.position.y=1.47;group.add(neck);
@@ -58,7 +58,7 @@ function mountProductModel(container){
  try{
   const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(35,container.clientWidth/container.clientHeight,.1,100);camera.position.set(0,0,5.5);
   renderer=createRenderer(container,true);addLights(scene);
-  controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.06;controls.enablePan=false;controls.minDistance=2.2;controls.maxDistance=10;controls.autoRotate=!reduced;controls.autoRotateSpeed=.7;
+  controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.06;controls.enablePan=false;controls.minDistance=2.2;controls.maxDistance=10;controls.autoRotate=!reduced;controls.autoRotateSpeed=.7;controls.rotateSpeed=window.matchMedia?.('(pointer: coarse)').matches?0.65:1;controls.zoomSpeed=0.8;
   const render=()=>renderer.render(scene,camera);controls.addEventListener('change',render);
   const resize=()=>{const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);render()};observer=new ResizeObserver(resize);observer.observe(container);
   container.dataset.modelState='loading';
