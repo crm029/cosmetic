@@ -169,6 +169,41 @@ class HomePageTest extends TestCase
 
         $this->assertDatabaseHas('orders', ['total' => 240000, 'payment_status' => 'unpaid']);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 5]);
+        $order = Order::latest('id')->firstOrFail();
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'from_status' => null,
+            'to_status' => 'pending',
+            'actor_type' => 'customer',
+        ]);
+    }
+
+    public function test_cart_cannot_accumulate_more_than_twenty_units_of_one_product(): void
+    {
+        $product = Product::create(['name' => 'محصول محدود', 'slug' => 'cart-max-quantity', 'price' => 10000, 'stock' => 40, 'is_active' => true]);
+
+        $this->post(route('cart.add', $product), ['quantity' => 15])->assertRedirect(route('cart.index'));
+        $this->post(route('cart.add', $product), ['quantity' => 10])
+            ->assertRedirect()
+            ->assertSessionHasErrors('cart');
+
+        $this->assertSame(15, session('cart')[$product->id]);
+    }
+
+    public function test_checkout_rejects_invalid_legacy_cart_quantities(): void
+    {
+        $product = Product::create(['name' => 'محصول بیش از حد', 'slug' => 'checkout-max-quantity', 'price' => 10000, 'stock' => 40, 'is_active' => true]);
+
+        $this->withSession(['cart' => [$product->id => 21]])
+            ->post(route('checkout.store'), [
+                'customer_name' => 'مشتری آزمایشی',
+                'mobile' => '09123456789',
+                'shipping_address' => 'تهران، خیابان نمونه، پلاک ۱',
+            ])
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHasErrors('cart');
+
+        $this->assertDatabaseCount('orders', 0);
     }
 
     public function test_customer_can_track_order_with_order_number_and_mobile(): void
