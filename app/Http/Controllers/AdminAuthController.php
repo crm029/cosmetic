@@ -10,7 +10,8 @@ class AdminAuthController extends Controller {
   if(!Auth::attempt(['mobile'=>$data['mobile'],'password'=>$data['password'],'is_admin'=>true],$request->boolean('remember'))){
    return back()->withErrors(['mobile'=>'اطلاعات ورود صحیح نیست.'])->onlyInput('mobile');
   }
-  $request->session()->regenerate();return redirect()->intended(route('admin.dashboard'));
+  $request->session()->regenerate();$request->session()->forget('admin_mfa_verified');
+  return redirect()->route(Auth::user()->totp_enabled_at?'admin.mfa.verify':'admin.mfa.setup');
  }
  public function logout(Request $request) {
   Auth::logout();$request->session()->invalidate();$request->session()->regenerateToken();
