@@ -118,6 +118,7 @@ class AdminController extends Controller {
  public function editCategory(Category $category): View { return view('admin.categories.form',compact('category')); }
  public function updateCategory(Request $request,Category $category) {
   $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/',Rule::unique('categories','slug')->ignore($category->id)],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0','max:4294967295'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
+  $oldImage=$category->image;
   $newImage=null;
   try {
    if($request->hasFile('image')){$newImage=$request->file('image')->store('categories','public');$data['image']=$newImage;}
@@ -127,7 +128,7 @@ class AdminController extends Controller {
    if($newImage)Storage::disk('public')->delete($newImage);
    throw $e;
   }
-  if($newImage&&$category->getOriginal('image')&&$category->getOriginal('image')!==$newImage)Storage::disk('public')->delete($category->getOriginal('image'));
+  if($newImage&&$oldImage&&$oldImage!==$newImage)Storage::disk('public')->delete($oldImage);
   return redirect()->route('admin.categories')->with('success','دسته‌بندی ویرایش شد.');
  }
  public function deleteCategory(Category $category) {
