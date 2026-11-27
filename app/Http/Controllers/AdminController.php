@@ -159,6 +159,39 @@ class AdminController extends Controller {
   $orders=Order::when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('order_number','like',$term)->orWhere('customer_name','like',$term)->orWhere('mobile','like',$term);});})->when(!empty($filters['status']),fn($q)=>$q->where('status',$filters['status']))->when(!empty($filters['payment_status']),fn($q)=>$q->where('payment_status',$filters['payment_status']))->latest()->paginate(25)->withQueryString();
   return view('admin.orders.index',compact('orders'));
  }
+ public function reports(Request $request): View {
+  $filters=$request->validate(['from'=>['nullable','date'],'to'=>['nullable','date','after_or_equal:from']]);
+  $start=!empty($filters['from'])?now()->parse($filters['from'])->startOfDay():now()->subDays(29)->startOfDay();
+  $end=!empty($filters['to'])?now()->parse($filters['to'])->endOfDay():now()->endOfDay();
+  if($start->diffInDays($end)>365)throw ValidationException::withMessages(['to'=>'بازه گزارش نمی‌تواند بیشتر از ۳۶۵ روز باشد.']);
+  $range=[$start,$end];
+  $orders=Order::whereBetween('created_at',$range);
+  $paidOrders=(clone $orders)->where('payment_status','paid');
+  $paidRevenue=(int)(clone $paidOrders)->sum('total');
+  $paidOrderCount=(clone $paidOrders)->count();
+  $dailyRows=DB::table('orders')->selectRaw('DATE(created_at) as day, SUM(total) as revenue, COUNT(*) as order_count')
+   ->whereBetween('created_at',$range)->where('payment_status','paid')->groupBy('day')->orderBy('day')->get()->keyBy('day');
+  $dailySales=collect();
+  for($day=$start->copy()->startOfDay();$day<=$end->copy()->startOfDay();$day->addDay()){
+   $key=$day->toDateString();$row=$dailyRows->get($key);
+   $dailySales->push(['date'=>$key,'label'=>$day->format('m/d'),'revenue'=>(int)($row->revenue??0),'orders'=>(int)($row->order_count??0)]);
+  }
+  $topProducts=DB::table('order_items')->join('orders','orders.id','=','order_items.order_id')
+   ->selectRaw('order_items.product_name, SUM(order_items.quantity) as quantity, SUM(order_items.line_total) as revenue')
+   ->whereBetween('orders.created_at',$range)->where('orders.payment_status','paid')
+   ->groupBy('order_items.product_name')->orderByDesc('quantity')->limit(10)->get();
+  $topCustomers=(clone $paidOrders)->selectRaw('mobile, MAX(customer_name) as customer_name, COUNT(*) as orders_count, SUM(total) as paid_total')
+   ->groupBy('mobile')->orderByDesc('paid_total')->limit(5)->get();
+  return view('admin.reports.index',[
+   'startDate'=>$start->toDateString(),'endDate'=>$end->toDateString(),
+   'orderCount'=>(clone $orders)->count(),'paidOrderCount'=>$paidOrderCount,
+   'unpaidOrderCount'=>(clone $orders)->where('payment_status','unpaid')->count(),
+   'refundedTotal'=>(int)(clone $orders)->where('payment_status','refunded')->sum('total'),
+   'paidRevenue'=>$paidRevenue,'averageOrderValue'=>$paidOrderCount?(int)round($paidRevenue/$paidOrderCount):0,
+   'dailySales'=>$dailySales,'maxDailyRevenue'=>max(1,(int)$dailySales->max('revenue')),
+   'topProducts'=>$topProducts,'topCustomers'=>$topCustomers,
+  ]);
+ }
  public function customers(Request $request): View {
   $filters=$request->validate(['q'=>['nullable','string','max:100']]);
   $customers=Order::query()
