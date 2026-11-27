@@ -25,32 +25,68 @@ class AdminController extends Controller {
  }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
  public function storeProduct(Request $request) {
-  $data=$this->validatedProduct($request);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);if($galleryFiles)$data['gallery']=array_map(fn($file)=>$file->store('products/gallery','public'),$galleryFiles);if($request->hasFile('image'))$data['image']=$request->file('image')->store('products','public');
-  if($request->hasFile('model_3d'))$data['model_3d']=$request->file('model_3d')->store('models','public');
-  if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
-  DB::transaction(function()use($data){
-   $product=Product::create($data);
-   if($product->stock>0)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'initial','quantity'=>$product->stock,'previous_stock'=>0,'new_stock'=>$product->stock,'note'=>'موجودی اولیه هنگام ثبت محصول']);
-  });
+  $data=$this->validatedProduct($request);
+  $galleryFiles=$request->file('gallery_images',[]);
+  unset($data['gallery_images'],$data['remove_gallery']);
+  $newFiles=[];
+  try {
+   if($galleryFiles){$data['gallery']=[];foreach($galleryFiles as $file){$stored=$file->store('products/gallery','public');$data['gallery'][]=$stored;$newFiles[]=$stored;}}
+   if($request->hasFile('image')){$data['image']=$request->file('image')->store('products','public');$newFiles[]=$data['image'];}
+   if($request->hasFile('model_3d')){$data['model_3d']=$request->file('model_3d')->store('models','public');$newFiles[]=$data['model_3d'];}
+   if(empty($data['slug']))$data['slug']='product-'.Str::lower(Str::random(10));
+   DB::transaction(function()use($data){
+    $product=Product::create($data);
+    if($product->stock>0)StockMovement::create(['product_id'=>$product->id,'admin_user_id'=>auth()->id(),'type'=>'initial','quantity'=>$product->stock,'previous_stock'=>0,'new_stock'=>$product->stock,'note'=>'موجودی اولیه هنگام ثبت محصول']);
+   });
+  } catch(\Throwable $e) {
+   foreach($newFiles as $file)Storage::disk('public')->delete($file);
+   throw $e;
+  }
   return redirect()->route('admin.products')->with('success','محصول ثبت شد.');
  }
  public function editProduct(Product $product): View { return view('admin.products.form',['product'=>$product,'categories'=>Category::orderBy('name')->get()]); }
  public function updateProduct(Request $request,Product $product) {
-  $data=$this->validatedProduct($request,$product);$galleryFiles=$request->file('gallery_images',[]);unset($data['gallery_images'],$data['remove_gallery']);$gallery=$product->gallery??[];foreach((array)$request->input('remove_gallery',[]) as $index){if(isset($gallery[$index])){Storage::disk('public')->delete($gallery[$index]);unset($gallery[$index]);}}$gallery=array_values($gallery);if(count($gallery)+count($galleryFiles)>8)return back()->withErrors(['gallery_images'=>'هر محصول حداکثر ۸ تصویر گالری می‌تواند داشته باشد.'])->withInput();foreach($galleryFiles as $file)$gallery[]=$file->store('products/gallery','public');if($gallery!==($product->gallery??[]))$data['gallery']=$gallery;if($request->hasFile('image')){if($product->image)Storage::disk('public')->delete($product->image);$data['image']=$request->file('image')->store('products','public');}
-  if($request->hasFile('model_3d')){if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$data['model_3d']=$request->file('model_3d')->store('models','public');}
-  if(empty($data['slug']))$data['slug']=$product->slug;
-  $requestedStock=(int)$data['stock'];unset($data['stock']);
-  DB::transaction(function()use($product,$data,$requestedStock){
-   $locked=Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
-   $previousStock=(int)$locked->stock;
-   $reserved=(int)DB::table('stock_reservations')->where('product_id',$locked->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
-   if($requestedStock<$reserved)throw ValidationException::withMessages(['stock'=>'موجودی جدید نمی‌تواند از تعداد رزروشده برای سفارش‌های در انتظار کمتر باشد.']);
-   $locked->update($data);
-   if($requestedStock!==$previousStock){
-    $locked->stock=$requestedStock;$locked->save();
-    StockMovement::create(['product_id'=>$locked->id,'admin_user_id'=>auth()->id(),'type'=>'adjustment','quantity'=>$requestedStock-$previousStock,'previous_stock'=>$previousStock,'new_stock'=>$requestedStock,'note'=>'اصلاح موجودی از پنل مدیریت']);
+  $data=$this->validatedProduct($request,$product);
+  $galleryFiles=$request->file('gallery_images',[]);
+  unset($data['gallery_images'],$data['remove_gallery']);
+  $gallery=$product->gallery??[];
+  $removedGallery=[];
+  foreach((array)$request->input('remove_gallery',[]) as $index){
+   if(isset($gallery[$index])){$removedGallery[]=$gallery[$index];unset($gallery[$index]);}
+  }
+  $gallery=array_values($gallery);
+  if(count($gallery)+count($galleryFiles)>8)return back()->withErrors(['gallery_images'=>'هر محصول حداکثر ۸ تصویر گالری می‌تواند داشته باشد.'])->withInput();
+  $newFiles=[];
+  $obsoleteFiles=$removedGallery;
+  try {
+   foreach($galleryFiles as $file){$stored=$file->store('products/gallery','public');$gallery[]=$stored;$newFiles[]=$stored;}
+   if($gallery!==($product->gallery??[]))$data['gallery']=$gallery;
+   if($request->hasFile('image')){
+    $data['image']=$request->file('image')->store('products','public');$newFiles[]=$data['image'];
+    if($product->image)$obsoleteFiles[]=$product->image;
    }
-  });
+   if($request->hasFile('model_3d')){
+    $data['model_3d']=$request->file('model_3d')->store('models','public');$newFiles[]=$data['model_3d'];
+    if($product->model_3d)$obsoleteFiles[]=$product->model_3d;
+   }
+   if(empty($data['slug']))$data['slug']=$product->slug;
+   $requestedStock=(int)$data['stock'];unset($data['stock']);
+   DB::transaction(function()use($product,$data,$requestedStock){
+    $locked=Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
+    $previousStock=(int)$locked->stock;
+    $reserved=(int)DB::table('stock_reservations')->where('product_id',$locked->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+    if($requestedStock<$reserved)throw ValidationException::withMessages(['stock'=>'موجودی جدید نمی‌تواند از تعداد رزروشده برای سفارش‌های در انتظار کمتر باشد.']);
+    $locked->update($data);
+    if($requestedStock!==$previousStock){
+     $locked->stock=$requestedStock;$locked->save();
+     StockMovement::create(['product_id'=>$locked->id,'admin_user_id'=>auth()->id(),'type'=>'adjustment','quantity'=>$requestedStock-$previousStock,'previous_stock'=>$previousStock,'new_stock'=>$requestedStock,'note'=>'اصلاح موجودی از پنل مدیریت']);
+    }
+   });
+  } catch(\Throwable $e) {
+   foreach($newFiles as $file)Storage::disk('public')->delete($file);
+   throw $e;
+  }
+  foreach(array_unique($obsoleteFiles) as $file)Storage::disk('public')->delete($file);
   return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
  public function stockHistory(Product $product): View { return view('admin.products.stock-history',['product'=>$product,'movements'=>StockMovement::with(['admin','order'])->where('product_id',$product->id)->latest()->paginate(30)]); }
