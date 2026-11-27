@@ -43,7 +43,7 @@ class SmsService {
  public function sendShipmentUpdateOnce(Order $order): bool {
   return $this->dispatchOnce($order,'shipment_sms_sent_at','shipment_sms_claimed_at',fn()=>$this->sendShipmentUpdate($order));
  }
- public function sendOrderPaid(Order $order): bool {
+ public function sendDeliveryUpdateOnce(Order $order): bool {\n  return $this->dispatchOnce($order,'delivery_sms_sent_at','delivery_sms_claimed_at',fn()=>$this->sendDeliveryUpdate($order));\n }\n public function sendDeliveryUpdate(Order $order): bool {\n  return $this->send($order,'مشتری گرامی، سفارش '.$order->order_number.' با موفقیت تحویل شما شد. از خرید شما سپاسگزاریم.');\n }\n public function sendOrderPaid(Order $order): bool {
   return $this->send($order,'مشتری گرامی، پرداخت سفارش '.$order->order_number.' با مبلغ '.number_format($order->total).' تومان با موفقیت ثبت شد. از خرید شما سپاسگزاریم.');
  }
  public function sendShipmentUpdate(Order $order): bool {
