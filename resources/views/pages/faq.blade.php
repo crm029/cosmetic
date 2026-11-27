@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'FAQPage','mainEntity'=>[
+<script nonce="{{ request()->attributes->get('csp_nonce') }}" type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'FAQPage','mainEntity'=>[
  ['@type'=>'Question','name'=>'چطور سفارش ثبت کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'محصول موردنظر را به سبد خرید اضافه کنید، اطلاعات تحویل را وارد کنید و پرداخت را تکمیل کنید.']],
  ['@type'=>'Question','name'=>'برای خرید باید حساب کاربری بسازم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'خرید مهمان امکان‌پذیر است و برای ثبت سفارش نیازی به ساخت حساب کاربری ندارید.']],
  ['@type'=>'Question','name'=>'چطور سفارش را پیگیری کنم؟','acceptedAnswer'=>['@type'=>'Answer','text'=>'شماره سفارش و شماره موبایلی را که هنگام خرید ثبت کرده‌اید در صفحه پیگیری سفارش وارد کنید.']],
