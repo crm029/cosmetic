@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->timestamp('consumed_at')->nullable()->index();
             $table->timestamps();
             $table->index(['product_id', 'expires_at', 'released_at', 'consumed_at'], 'stock_reservations_active_lookup');
-            $table->unique(['order_id', 'product_id']);
+            $table->index(['order_id', 'product_id'], 'stock_reservations_order_product_lookup');
         });
     }
 
