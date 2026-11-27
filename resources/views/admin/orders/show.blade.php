@@ -24,7 +24,18 @@
 <form method="POST" action="{{ route('admin.orders.update',$order) }}" class="order-status-form">@csrf @method('PATCH')
 <label>شرکت یا روش ارسال<input name="shipping_carrier" value="{{ old('shipping_carrier',$order->shipping_carrier) }}" maxlength="100" placeholder="پست، تیپاکس، پیک فروشگاه..."></label>
 <label>کد رهگیری مرسوله<input name="tracking_code" value="{{ old('tracking_code',$order->tracking_code) }}" maxlength="120"></label>
-<label>وضعیت سفارش<select name="status">@foreach(['pending'=>'در انتظار','processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده','cancelled'=>'لغوشده'] as $value=>$label)<option value="{{ $value }}" @selected($order->status===$value)>{{ $label }}</option>@endforeach</select></label><button class="button button-dark">ذخیره وضعیت</button></form>
+<label>وضعیت سفارش<select name="status">
+@php
+$statusOptions=match($order->status){
+'pending'=>['pending'=>'در انتظار','processing'=>'در حال آماده‌سازی']+($order->payment_status==='paid'?[]:['cancelled'=>'لغوشده']),
+'processing'=>['processing'=>'در حال آماده‌سازی','shipped'=>'ارسال‌شده'],
+'shipped'=>['shipped'=>'ارسال‌شده','delivered'=>'تحویل‌شده'],
+'delivered'=>['delivered'=>'تحویل‌شده'],
+default=>[],
+};
+@endphp
+@foreach($statusOptions as $value=>$label)<option value="{{ $value }}" @selected($order->status===$value)>{{ $label }}</option>@endforeach
+</select></label><button class="button button-dark">ذخیره وضعیت</button></form>
 @endif
 </div></section>
 @endsection
