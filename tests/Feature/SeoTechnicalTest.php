@@ -25,7 +25,10 @@ class SeoTechnicalTest extends TestCase
         $this->get(route('products.show', $product))
             ->assertOk()
             ->assertSee('<link rel="canonical" href="'.e(route('products.show', $product)).'">', false)
-            ->assertSee('<meta property="og:type" content="product">', false);
+            ->assertSee('<meta property="og:type" content="product">', false)
+            ->assertSee('<meta property="og:url" content="'.e(route('products.show', $product)).'">', false)
+            ->assertSee('<meta name="twitter:title"', false)
+            ->assertSee('"url":"'.route('products.show', $product).'"', false);
     }
 
     public function test_same_host_product_canonical_url_is_preserved(): void
