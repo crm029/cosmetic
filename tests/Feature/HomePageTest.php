@@ -1596,4 +1596,10 @@ class HomePageTest extends TestCase
             ->assertSessionHasErrors('max_price');
     }
 
+    public function test_shop_allows_a_maximum_price_without_a_minimum_price(): void
+    {
+        $this->get(route('shop', ['max_price' => 100000]))
+            ->assertOk();
+    }
+
 }
