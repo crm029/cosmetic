@@ -52,7 +52,8 @@ class CustomerAuthController extends Controller {
   if(!auth()->check())return redirect()->route('customer.login');
   abort_if(auth()->user()->is_admin,403);
   $orders=Order::where('user_id',auth()->id())->with('items')->latest()->paginate(10);
-  return view('account.index',compact('orders'));
+  $transactions=auth()->user()->loyaltyTransactions()->with('order')->take(20)->get();
+  return view('account.index',compact('orders','transactions'));
  }
  public function logout(Request $request) {
   abort_unless(auth()->check()&&!auth()->user()->is_admin,403);
