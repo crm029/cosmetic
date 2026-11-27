@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'AboutPage','name'=>'درباره ما','url'=>url()->current(),'description'=>'داستان و رویکرد فروشگاه در انتخاب محصولات مراقبت و زیبایی.'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'AboutPage','name'=>'درباره ما','url'=>url()->current(),'description'=>'داستان و رویکرد فروشگاه در انتخاب محصولات مراقبت و زیبایی.'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
 @endpush
 @section('content')
 <section class="page-intro"><span class="eyebrow">OUR POINT OF VIEW</span><h1>داستان <em>ما</em></h1><p>زیبایی در انتخاب‌های آگاهانه و مراقبت‌های کوچک روزانه معنا پیدا می‌کند.</p></section>
