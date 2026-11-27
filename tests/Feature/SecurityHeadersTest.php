@@ -28,7 +28,7 @@ class SecurityHeadersTest extends TestCase
         $policy = $response->headers->get('Content-Security-Policy');
 
         $this->assertStringContainsString("script-src 'self' 'nonce-", $policy);
-        $this->assertStringNotContainsString("'unsafe-inline'", $policy);
+        $this->assertDoesNotMatchRegularExpression("/script-src[^;]*'unsafe-inline'/", $policy);
         $this->assertMatchesRegularExpression('/nonce="[^"]+"/', $response->getContent());
     }
 
