@@ -34,11 +34,11 @@ class CouponAndDeliveryTest extends TestCase {
  }
  public function test_admin_can_create_and_disable_coupon(): void {
   $admin=User::create(['name'=>'مدیر کوپن','mobile'=>'09123456780','password'=>'a-secure-test-password','is_admin'=>true]);
-  $this->actingAs($admin)->post(route('admin.coupons.store'),[
+  $this->actingAsAdmin($admin)->post(route('admin.coupons.store'),[
    'code'=>'SPRING15','type'=>'percent','value'=>15,'minimum_order_toman'=>0,'usage_limit'=>100,'is_active'=>1,
   ])->assertRedirect()->assertSessionHasNoErrors();
   $coupon=Coupon::where('code','SPRING15')->firstOrFail();
-  $this->actingAs($admin)->patch(route('admin.coupons.toggle',$coupon))->assertRedirect();
+  $this->actingAsAdmin($admin)->patch(route('admin.coupons.toggle',$coupon))->assertRedirect();
   $this->assertFalse($coupon->fresh()->is_active);
  }
 }
