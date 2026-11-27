@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 class CustomerAuthController extends Controller {
@@ -32,20 +33,28 @@ class CustomerAuthController extends Controller {
  public function verify(Request $request) {
   $data=$request->validate(['mobile'=>['required','regex:/^09[0-9]{9}$/'],'code'=>['required','digits:6'],'name'=>['nullable','string','max:120']]);
   if($request->session()->get('customer_otp_mobile')!==$data['mobile'])return back()->withErrors(['mobile'=>'ابتدا برای همین شماره درخواست کد تأیید کنید.']);
-  $verification=PhoneVerification::where('mobile',$data['mobile'])->whereNull('consumed_at')->latest()->first();
-  if(!$verification||$verification->expires_at->isPast()||$verification->attempts>=5||!Hash::check($data['code'],$verification->code_hash)){
-   if($verification&&!$verification->consumed_at)$verification->increment('attempts');
-   return back()->withErrors(['code'=>'کد تأیید نادرست است یا اعتبار آن پایان یافته است.'])->withInput(['mobile'=>$data['mobile']]);
-  }
-  if(User::where('mobile',$data['mobile'])->where('is_admin',true)->exists())return back()->withErrors(['mobile'=>'امکان ورود مشتری با این شماره وجود ندارد.']);
-  $verification->update(['consumed_at'=>now()]);
-  $user=User::where('mobile',$data['mobile'])->first();
-  if(!$user){
-   $order=Order::where('mobile',$data['mobile'])->latest()->first();
-   $user=User::create(['name'=>$data['name']?:($order?->customer_name?:'مشتری'),'mobile'=>$data['mobile'],'password'=>Str::random(48),'is_admin'=>false]);
-  }elseif($data['name']&&$user->name==='مشتری')$user->update(['name'=>$data['name']]);
-  Order::where('mobile',$data['mobile'])->whereNull('user_id')->update(['user_id'=>$user->id]);
-  Auth::login($user);$request->session()->regenerate();$request->session()->forget('customer_otp_mobile');
+  $result=DB::transaction(function()use($data){
+   $verification=PhoneVerification::where('mobile',$data['mobile'])->whereNull('consumed_at')->latest()->lockForUpdate()->first();
+   if(!$verification)return ['error'=>'کد تأیید پیدا نشد؛ دوباره درخواست کد کنید.'];
+   if($verification->expires_at->isPast()||$verification->attempts>=5)return ['error'=>'کد تأیید منقضی شده یا تعداد تلاش‌ها بیش از حد مجاز است.'];
+   if(!Hash::check($data['code'],$verification->code_hash)){
+    $verification->increment('attempts');
+    return ['error'=>'کد تأیید نادرست است.'];
+   }
+   $user=User::where('mobile',$data['mobile'])->lockForUpdate()->first();
+   if($user&&$user->is_admin)return ['error'=>'امکان ورود مشتری با این شماره وجود ندارد.'];
+   $verification->update(['consumed_at'=>now()]);
+   if(!$user){
+    $order=Order::where('mobile',$data['mobile'])->latest()->first();
+    $user=User::create(['name'=>$data['name']?:($order?->customer_name?:'مشتری'),'mobile'=>$data['mobile'],'password'=>Str::random(48),'is_admin'=>false]);
+   }elseif($data['name']&&$user->name==='مشتری')$user->update(['name'=>$data['name']]);
+   Order::where('mobile',$data['mobile'])->whereNull('user_id')->update(['user_id'=>$user->id]);
+   return ['user_id'=>$user->id];
+  });
+  if(isset($result['error']))return back()->withErrors(['code'=>$result['error']])->withInput(['mobile'=>$data['mobile']]);
+  Auth::loginUsingId($result['user_id']);
+  $request->session()->regenerate();
+  $request->session()->forget('customer_otp_mobile');
   return redirect()->intended(route('account.index'))->with('success','ورود شما با موفقیت انجام شد.');
  }
  public function index(): View|\Illuminate\Http\RedirectResponse {
