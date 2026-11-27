@@ -19,6 +19,7 @@ class CartController extends Controller {
   $quantity=(int)($data['quantity']??1);$cart=$request->session()->get('cart',[]);
   $new=(int)($cart[$product->id]??0)+$quantity;
   $reserved=(int)DB::table('stock_reservations')->where('product_id',$product->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+  if($new>20)return back()->withErrors(['cart'=>'حداکثر تعداد هر محصول در سبد خرید ۲۰ عدد است.']);
   if($new>$product->stock-$reserved)return back()->withErrors(['cart'=>'تعداد انتخاب‌شده بیشتر از موجودی آزاد محصول است.']);
   $cart[$product->id]=$new;$request->session()->put('cart',$cart);
   return redirect()->route('cart.index')->with('success','محصول به سبد خرید اضافه شد.');
