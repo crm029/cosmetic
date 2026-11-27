@@ -78,3 +78,8 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .product-3d-viewer>.product-3d-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:0}
 .product-3d-viewer>.product-3d-fallback[hidden]{display:none}
+
+/* Keyboard accessibility and interactive feedback */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--clay);outline-offset:3px}
+.admin-table a.admin-row:hover{background:#f2ebe3}
+.product-card:focus-visible{outline-offset:5px}
