@@ -36,6 +36,23 @@ class SecurityHardeningTest extends TestCase
         ])->assertTooManyRequests();
     }
 
+
+    public function test_admin_login_also_has_an_ip_wide_limit_across_different_mobile_numbers(): void
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $mobile = '09120000'.str_pad((string)$attempt, 3, '0', STR_PAD_LEFT);
+            $this->post('/admin/login', [
+                'mobile' => $mobile,
+                'password' => 'incorrect-password',
+            ])->assertSessionHasErrors();
+        }
+
+        $this->post('/admin/login', [
+            'mobile' => '09129999999',
+            'password' => 'incorrect-password',
+        ])->assertTooManyRequests();
+    }
+
     public function test_customer_otp_verification_is_rate_limited_per_mobile_and_ip(): void
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {
