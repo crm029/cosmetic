@@ -4,6 +4,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\CustomerAuthController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminController;
@@ -34,6 +36,10 @@ Route::get('/order/track',[OrderTrackingController::class,'index'])->name('order
 Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:5,1')->name('orders.track.lookup');
 Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware('throttle:5,1')->name('orders.pay.retry');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
+Route::get('/account/login',[CustomerAuthController::class,'show'])->name('customer.login');
+Route::post('/account/send-code',[CustomerAuthController::class,'sendCode'])->middleware('throttle:3,10')->name('customer.send-code');
+Route::post('/account/verify',[CustomerAuthController::class,'verify'])->middleware('throttle:5,10')->name('customer.verify');
+Route::middleware('auth')->group(function(){ Route::get('/account',[CustomerAuthController::class,'index'])->name('account.index'); Route::post('/account/logout',[CustomerAuthController::class,'logout'])->name('account.logout'); Route::post('/product/{product}/reviews',[ProductReviewController::class,'store'])->middleware('throttle:5,10')->name('products.reviews.store'); });
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
@@ -46,6 +52,8 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::put('/categories/{category}',[AdminController::class,'updateCategory'])->name('categories.update');
  Route::delete('/categories/{category}',[AdminController::class,'deleteCategory'])->name('categories.delete');
  Route::get('/settings',[AdminController::class,'settings'])->name('settings');
+ Route::get('/reviews',[ProductReviewController::class,'index'])->name('reviews');
+ Route::patch('/reviews/{review}',[ProductReviewController::class,'moderate'])->name('reviews.moderate');
  Route::get('/coupons',[AdminController::class,'coupons'])->name('coupons');
  Route::post('/coupons',[AdminController::class,'storeCoupon'])->name('coupons.store');
  Route::patch('/coupons/{coupon}/toggle',[AdminController::class,'toggleCoupon'])->name('coupons.toggle');
