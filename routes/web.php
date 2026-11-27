@@ -45,9 +45,9 @@ Route::middleware('auth')->group(function(){ Route::post('/account/logout',[Cust
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::middleware('auth')->prefix('admin/security')->name('admin.mfa.')->group(function(){
  Route::get('/setup',[AdminMfaController::class,'setup'])->name('setup');
- Route::post('/setup',[AdminMfaController::class,'enable'])->middleware('throttle:5,1')->name('enable');
+ Route::post('/setup',[AdminMfaController::class,'enable'])->middleware('throttle:admin-mfa')->name('enable');
  Route::get('/verify',[AdminMfaController::class,'verifyForm'])->name('verify');
- Route::post('/verify',[AdminMfaController::class,'verifyCode'])->middleware('throttle:5,1')->name('verify.submit');
+ Route::post('/verify',[AdminMfaController::class,'verifyCode'])->middleware('throttle:admin-mfa')->name('verify.submit');
 });
 Route::post('/admin/logout',[AdminAuthController::class,'logout'])->middleware('auth')->name('admin.logout');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:admin-login')->name('admin.login.submit');
