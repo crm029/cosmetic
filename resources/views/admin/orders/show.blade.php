@@ -50,7 +50,7 @@ default=>[],
             'paid_stock_issue' => 'مشکل موجودی',
             'refund_required' => 'نیازمند بازپرداخت',
         ];
-        $actorLabels = ['admin' => 'مدیر فروشگاه', 'system' => 'سیستم', 'payment_gateway' => 'درگاه پرداخت'];
+        $actorLabels = ['admin' => 'مدیر فروشگاه', 'system' => 'سیستم', 'payment_gateway' => 'درگاه پرداخت', 'customer' => 'مشتری'];
     @endphp
     @forelse($order->statusHistory as $history)
         <article class="order-history-item">
