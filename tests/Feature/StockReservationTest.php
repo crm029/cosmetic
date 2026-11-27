@@ -144,7 +144,7 @@ class StockReservationTest extends TestCase
         $order = $this->makeOrder([['product' => $product, 'quantity' => 4]], 'CS-ADMIN-RESERVE-01');
         app(StockReservationService::class)->reserveForOrder($order);
 
-        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        $this->actingAsAdmin($admin)->put(route('admin.products.update', $product), [
             'name' => $product->name,
             'slug' => $product->slug,
             'price' => $product->price,
@@ -162,7 +162,7 @@ class StockReservationTest extends TestCase
         $order = $this->makeOrder([['product' => $product, 'quantity' => 1]], 'CS-ADMIN-RESERVE-02');
         app(StockReservationService::class)->reserveForOrder($order);
 
-        $this->actingAs($admin)->delete(route('admin.products.delete', $product))
+        $this->actingAsAdmin($admin)->delete(route('admin.products.delete', $product))
             ->assertSessionHasErrors('product');
 
         $this->assertDatabaseHas('products', ['id' => $product->id]);
@@ -178,7 +178,7 @@ class StockReservationTest extends TestCase
         DB::table('stock_reservations')->where('order_id', $order->id)->update(['expires_at' => now()->subMinute()]);
         $order->update(['payment_status' => 'paid', 'status' => 'paid_stock_issue']);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->post(route('admin.orders.reconcile', $order))
             ->assertRedirect()
             ->assertSessionHasNoErrors();
@@ -198,7 +198,7 @@ class StockReservationTest extends TestCase
         $order = $this->makeOrder([['product' => $product, 'quantity' => 3]], 'CS-CANCEL-RESERVE-01');
         app(StockReservationService::class)->reserveForOrder($order);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
@@ -240,7 +240,7 @@ class StockReservationTest extends TestCase
         $order = $this->makeOrder([['product' => $product, 'quantity' => 4]], 'CS-MEDIA-ROLLBACK-01');
         app(StockReservationService::class)->reserveForOrder($order);
 
-        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        $this->actingAsAdmin($admin)->put(route('admin.products.update', $product), [
             'name' => $product->name,
             'slug' => $product->slug,
             'price' => $product->price,
@@ -265,7 +265,7 @@ class StockReservationTest extends TestCase
             'price' => 100000, 'stock' => 5, 'image' => $oldImage, 'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        $this->actingAsAdmin($admin)->put(route('admin.products.update', $product), [
             'name' => $product->name,
             'slug' => $product->slug,
             'price' => $product->price,
@@ -301,12 +301,12 @@ class StockReservationTest extends TestCase
         $service->reserveForOrder($firstOrder);
         $service->reserveForOrder($secondOrder);
 
-        $this->actingAs($admin)->get(route('admin.products', ['stock_status' => 'out']))
+        $this->actingAsAdmin($admin)->get(route('admin.products', ['stock_status' => 'out']))
             ->assertOk()
             ->assertSee('محصول کاملاً رزروشده')
             ->assertDontSee('محصول با موجودی آزاد کم');
 
-        $this->actingAs($admin)->get(route('admin.products', ['stock_status' => 'low']))
+        $this->actingAsAdmin($admin)->get(route('admin.products', ['stock_status' => 'low']))
             ->assertOk()
             ->assertSee('محصول با موجودی آزاد کم')
             ->assertDontSee('محصول کاملاً رزروشده');
