@@ -47,7 +47,7 @@ class StoreSettingsTest extends TestCase
         Storage::disk('public')->put($oldLogo, 'old-logo');
         $settings->update(['logo_path' => $oldLogo]);
 
-        $this->actingAs($admin)->put(route('admin.settings.update'), array_merge(
+        $this->actingAsAdmin($admin)->put(route('admin.settings.update'), array_merge(
             $this->settingsPayload(),
             ['logo' => UploadedFile::fake()->image('new-logo.png')]
         ))->assertRedirect()->assertSessionHasNoErrors();
@@ -67,7 +67,7 @@ class StoreSettingsTest extends TestCase
         Storage::disk('public')->put($logo, 'logo');
         $settings->update(['logo_path' => $logo]);
 
-        $this->actingAs($admin)->put(route('admin.settings.update'), array_merge(
+        $this->actingAsAdmin($admin)->put(route('admin.settings.update'), array_merge(
             $this->settingsPayload(),
             ['remove_logo' => 1]
         ))->assertRedirect()->assertSessionHasNoErrors();
