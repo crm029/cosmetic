@@ -1771,7 +1771,7 @@ class HomePageTest extends TestCase
         $this->post(route('orders.pay.retry', $order), [
             'order_number' => $order->order_number,
             'mobile' => $order->mobile,
-        ])->assertSessionHasErrors('payment');
+        ])->assertRedirect('https://sandbox.zarinpal.com/pg/StartPay/S0000000000000000000000000000999');
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
