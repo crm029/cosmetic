@@ -48,7 +48,7 @@ class CustomerAuthController extends Controller {
   Auth::login($user);$request->session()->regenerate();$request->session()->forget('customer_otp_mobile');
   return redirect()->intended(route('account.index'))->with('success','ورود شما با موفقیت انجام شد.');
  }
- public function index(): View|\\Illuminate\\Http\\RedirectResponse {
+ public function index(): View|\Illuminate\Http\RedirectResponse {
   if(!auth()->check())return redirect()->route('customer.login');
   abort_if(auth()->user()->is_admin,403);
   $orders=Order::where('user_id',auth()->id())->with('items')->latest()->paginate(10);
