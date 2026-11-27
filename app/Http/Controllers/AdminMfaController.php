@@ -27,6 +27,7 @@ class AdminMfaController extends Controller
     public function enable(Request $request, TotpService $totp): RedirectResponse
     {
         $this->ensureAdmin($request);
+        abort_if($request->user()->totp_enabled_at, 403);
         $data = $request->validate(['code' => ['required', 'digits:6']]);
         $secret = $request->session()->get('admin_totp_setup_secret');
         abort_unless(is_string($secret) && $secret !== '', 419);
