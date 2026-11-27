@@ -216,7 +216,16 @@ class AdminController extends Controller {
    'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
    'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0','gt:price'],
-   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'model_3d'=>['nullable','file','mimes:glb','max:20480'],
+   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'model_3d'=>['nullable','file','max:20480',function($attribute,$file,$fail){
+    $path=$file->getRealPath();$handle=$path?@fopen($path,'rb'):false;
+    if(!$handle){$fail('فایل مدل سه‌بعدی قابل خواندن نیست.');return;}
+    $header=fread($handle,20);fclose($handle);
+    if(strlen($header)!==20||substr($header,0,4)!=='glTF'){$fail('فایل باید یک مدل معتبر GLB نسخه ۲ باشد.');return;}
+    $version=unpack('V',substr($header,4,4))[1];$length=unpack('V',substr($header,8,4))[1];$chunkLength=unpack('V',substr($header,12,4))[1];
+    if($version!==2||$length!==$file->getSize()||substr($header,16,4)!=='JSON'||$chunkLength<2||$chunkLength%4!==0||20+$chunkLength>$file->getSize()){$fail('ساختار فایل GLB معتبر نیست.');return;}
+    $handle=fopen($path,'rb');fseek($handle,20);$json=fread($handle,$chunkLength);fclose($handle);$document=json_decode($json,true);
+    if(!is_array($document)||($document['asset']['version']??null)!=='2.0')$fail('مدل سه‌بعدی باید با استاندارد glTF 2.0 سازگار باشد.');
+   }],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
    'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'canonical_url'=>['nullable','url','max:500']
   ])+['is_active'=>$request->boolean('is_active'),'is_featured'=>$request->boolean('is_featured')];
