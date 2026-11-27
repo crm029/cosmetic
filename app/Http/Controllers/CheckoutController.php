@@ -58,7 +58,7 @@ class CheckoutController extends Controller {
     $shipping=$data['shipping_method']==='pickup'?0:(($threshold>0&&$subtotal>=$threshold)?0:$fee);
     $coupon=null;$discount=0;
     if($couponCode){
-     $coupon=\\App\\Models\\Coupon::where('code',$couponCode)->lockForUpdate()->first();
+     $coupon=\App\Models\Coupon::where('code',$couponCode)->lockForUpdate()->first();
      if(!$coupon||!$coupon->isAvailable())throw new RuntimeException('کد تخفیف دیگر معتبر نیست؛ لطفاً آن را دوباره بررسی کنید.');
      $discount=$coupon->discountFor($subtotal);
      if($discount<1)throw new RuntimeException('حداقل مبلغ خرید برای استفاده از کد تخفیف فراهم نیست.');
@@ -71,7 +71,8 @@ class CheckoutController extends Controller {
     $reservations->reserveForOrder($created);
     return $created;
    });
-   $request->session()->forget('coupon_code');\n   return redirect()->away($gateway->requestPayment($order));
+   $request->session()->forget('coupon_code');
+   return redirect()->away($gateway->requestPayment($order));
   } catch (RuntimeException $e) {
    $suffix=$order?' شماره سفارش: '.$order->order_number:'';
    return redirect()->route('checkout.index')->withErrors(['checkout'=>$e->getMessage().$suffix]);
