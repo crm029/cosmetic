@@ -16,23 +16,23 @@ class AppServiceProvider extends ServiceProvider {
   }
   RateLimiter::for('admin-login',fn(Request $request)=>[
    Limit::perMinute(10)->by('admin-ip|'.$request->ip()),
-   Limit::perMinute(5)->by('admin|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
+   Limit::perMinute(5)->by('admin-mobile|''.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
   RateLimiter::for('customer-otp-send',fn(Request $request)=>[
    Limit::perMinutes(10,10)->by('otp-send-ip|'.$request->ip()),
-   Limit::perMinutes(10,3)->by('otp-send|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
+   Limit::perMinutes(10,3)->by('otp-send-mobile|''.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
   RateLimiter::for('customer-otp-verify',fn(Request $request)=>[
    Limit::perMinutes(10,20)->by('otp-verify-ip|'.$request->ip()),
-   Limit::perMinutes(10,5)->by('otp-verify|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
+   Limit::perMinutes(10,5)->by('otp-verify-mobile|''.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
   RateLimiter::for('order-track',fn(Request $request)=>[
    Limit::perMinute(20)->by('order-track-ip|'.$request->ip()),
-   Limit::perMinute(5)->by('order-track|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
+   Limit::perMinute(5)->by('order-track-mobile|''.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
   RateLimiter::for('order-payment-retry',fn(Request $request)=>[
    Limit::perMinutes(10,10)->by('order-pay-ip|'.$request->ip()),
-   Limit::perMinutes(10,3)->by('order-pay|'.$request->ip().'|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
+   Limit::perMinutes(10,3)->by('order-pay-mobile|''.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
   View::composer('layouts.app',function($view){
    $data=$view->getData();$product=$data['product']??null;$category=$data['category']??null;$storeSettings=StoreSetting::current();
