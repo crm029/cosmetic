@@ -15,4 +15,5 @@ Artisan::command('store:make-admin',function(){
 
 Schedule::call(fn () => app(\App\Services\StockReservationService::class)->releaseExpired())
  ->everyMinute()
+ ->name('release-expired-stock-reservations')
  ->withoutOverlapping();
