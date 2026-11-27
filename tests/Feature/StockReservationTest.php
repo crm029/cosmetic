@@ -207,4 +207,21 @@ class StockReservationTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
     }
 
+
+    public function test_legacy_paid_order_cannot_take_stock_reserved_for_another_order(): void
+    {
+        $product = Product::create(['name' => 'محصول با رزرو فعال', 'slug' => 'legacy-cannot-steal-reserved', 'price' => 90000, 'stock' => 3, 'is_active' => true]);
+        $reservedOrder = $this->makeOrder([['product' => $product, 'quantity' => 2]], 'CS-LEGACY-RESERVE-01');
+        $legacyPaidOrder = $this->makeOrder([['product' => $product, 'quantity' => 2]], 'CS-LEGACY-RESERVE-02');
+        app(StockReservationService::class)->reserveForOrder($reservedOrder);
+        $legacyPaidOrder->update(['payment_status' => 'paid']);
+
+        $this->assertFalse(app(OrderFulfillmentService::class)->deductStock($legacyPaidOrder));
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 3]);
+        $this->assertDatabaseHas('orders', ['id' => $legacyPaidOrder->id, 'status' => 'paid_stock_issue']);
+        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertDatabaseHas('stock_reservations', ['order_id' => $reservedOrder->id, 'quantity' => 2, 'released_at' => null]);
+    }
+
 }
