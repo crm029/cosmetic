@@ -13,14 +13,14 @@ class PaymentController extends Controller {
   $order=Order::where('payment_authority',$authority)->first();
   if(!$order)return redirect()->route('home')->withErrors(['payment'=>'سفارش پرداخت‌شده پیدا نشد.']);
   if(strtoupper($status)!=='OK'){
-   DB::transaction(function()use($order,$reservations){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);});
+   DB::transaction(function()use($order,$reservations,$authority){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked&&$locked->payment_status!=='paid'&&$locked->payment_authority===$authority){$reservations->releaseForOrder($locked);$locked->update(['payment_authority'=>null]);}});
    return redirect()->route('home')->withErrors(['payment'=>'پرداخت توسط کاربر لغو شد یا ناموفق بود.']);
   }
   try {
    $verifiedData=null;
    if(!in_array($order->payment_status,['paid','refunded'],true)) {
     $verifiedData=$gateway->verify($order);
-    if($verifiedData===null)return redirect()->route('home')->withErrors(['payment'=>'تأیید پرداخت از سوی درگاه انجام نشد.']);
+    if($verifiedData===null){DB::transaction(function()use($order,$reservations,$authority){$locked=Order::whereKey($order->id)->lockForUpdate()->first();if($locked&&$locked->payment_status!=='paid'&&$locked->payment_authority===$authority){$reservations->releaseForOrder($locked);$locked->update(['payment_authority'=>null]);}});return redirect()->route('home')->withErrors(['payment'=>'تأیید پرداخت از سوی درگاه انجام نشد؛ لینک قبلی بسته شد و می‌توانید دوباره تلاش کنید.']);}
    }
    $settlement=DB::transaction(function()use($order,$verifiedData){
     $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
