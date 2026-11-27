@@ -147,4 +147,65 @@ class CatalogManagementTest extends TestCase
     }
 
 
+
+    public function test_category_image_can_be_removed_without_replacing_it(): void
+    {
+        Storage::fake('public');
+        $admin = $this->admin();
+        $image = 'categories/remove-me.jpg';
+        Storage::disk('public')->put($image, 'image');
+        $category = Category::create([
+            'name' => 'دسته قابل ویرایش',
+            'slug' => 'category-remove-image',
+            'image' => $image,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+            'name' => $category->name,
+            'slug' => $category->slug,
+            'is_active' => true,
+            'remove_image' => 1,
+        ])->assertRedirect(route('admin.categories'))->assertSessionHasNoErrors();
+
+        $this->assertNull($category->fresh()->image);
+        Storage::disk('public')->assertMissing($image);
+    }
+
+    public function test_product_image_and_glb_can_be_removed_from_admin_editor(): void
+    {
+        Storage::fake('public');
+        $admin = $this->admin();
+        $image = 'products/remove-image.jpg';
+        $model = 'models/remove-model.glb';
+        Storage::disk('public')->put($image, 'image');
+        Storage::disk('public')->put($model, 'model');
+        $product = Product::create([
+            'name' => 'محصول قابل پاکسازی',
+            'slug' => 'product-remove-media',
+            'price' => 90000,
+            'stock' => 2,
+            'image' => $image,
+            'model_3d' => $model,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => $product->price,
+            'stock' => $product->stock,
+            'is_active' => true,
+            'remove_image' => 1,
+            'remove_model_3d' => 1,
+        ])->assertRedirect(route('admin.products'))->assertSessionHasNoErrors();
+
+        $updated = $product->fresh();
+        $this->assertNull($updated->image);
+        $this->assertNull($updated->model_3d);
+        Storage::disk('public')->assertMissing($image);
+        Storage::disk('public')->assertMissing($model);
+    }
+
+
 }
