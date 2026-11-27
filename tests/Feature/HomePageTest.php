@@ -1643,4 +1643,80 @@ class HomePageTest extends TestCase
         }
     }
 
+    public function test_admin_cannot_skip_order_fulfillment_stages(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر گردش سفارش',
+            'mobile' => '09111111221',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-ORDER-STAGES-01',
+            'customer_name' => 'مشتری مراحل',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+            'stock_deducted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+            'status' => 'delivered',
+        ])->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'processing',
+        ]);
+    }
+
+    public function test_admin_can_move_order_through_shipping_stages_in_sequence(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر ارسال',
+            'mobile' => '09111111222',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-ORDER-STAGES-02',
+            'customer_name' => 'مشتری ارسال',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 200000,
+            'shipping_amount' => 0,
+            'total' => 200000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+            'stock_deducted_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+            'status' => 'shipped',
+            'shipping_carrier' => 'پست',
+            'tracking_code' => 'TEST-TRACK-123',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'shipped',
+            'tracking_code' => 'TEST-TRACK-123',
+        ]);
+
+        $this->patch(route('admin.orders.update', $order), [
+            'status' => 'delivered',
+            'shipping_carrier' => 'پست',
+            'tracking_code' => 'TEST-TRACK-123',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'delivered',
+        ]);
+    }
+
 }
