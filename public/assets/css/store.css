@@ -102,3 +102,24 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .report-product-head,.report-product-row{grid-template-columns:1.4fr 1fr 1fr;min-width:520px}
 .report-customer-head,.report-customer-row{grid-template-columns:1.2fr 1.2fr .6fr 1fr;min-width:580px}
 @media(max-width:760px){.report-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.report-tables{grid-template-columns:1fr}}
+
+/* Contact inbox */
+.admin-muted{font-size:11px;color:var(--muted)}
+.message-stats{display:flex;gap:14px;margin:0 0 22px}
+.message-stats>div{min-width:150px;padding:16px 20px;background:#ece3d9;display:grid;gap:8px}
+.message-stats span{font-size:10px;color:var(--muted)}
+.message-stats strong{font:25px var(--serif);color:var(--clay)}
+.message-filter-form{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin-bottom:25px}
+.message-filter-form label{display:grid;gap:7px;min-width:180px;flex:1;font-size:11px;color:var(--muted)}
+.message-filter-form input,.message-filter-form select{width:100%;padding:11px;border:1px solid var(--line);background:#fff;font:11px "Vazirmatn";color:var(--ink)}
+.message-filter-form .button{margin:0;padding:11px 18px}
+.message-admin-head,.message-admin-row{grid-template-columns:1.05fr 1fr 2fr .75fr 1fr;min-width:900px}
+.message-admin-row{align-items:start}
+.message-admin-row small{display:block;margin-top:7px;color:var(--muted);font-size:10px;direction:ltr;text-align:right}
+.message-admin-row p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:2;color:var(--muted);margin:8px 0 0}
+.message-admin-row form{display:flex}
+.message-admin-row button{font:10px "Vazirmatn";color:var(--clay);border:0;background:none;cursor:pointer;text-align:right}
+.message-state{display:inline-block;padding:5px 9px;font-size:10px;background:#eee6dc;color:#78695c}
+.message-state.is-unread{background:#f2e1d8;color:#8b5142}
+.message-empty{padding:25px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.message-stats{gap:8px}.message-stats>div{min-width:0;flex:1}.message-filter-form{align-items:stretch;flex-direction:column}.message-filter-form label{width:100%}}
