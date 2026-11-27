@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
@@ -65,7 +66,8 @@ class OrderFulfillmentService {
    if($reservations->isNotEmpty()){
     DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['consumed_at'=>now(),'updated_at'=>now()]);
    }
-   $lockedOrder->update(['stock_deducted_at'=>now()]);\n   $this->changeStatus($lockedOrder, 'processing', 'پرداخت و کسر موجودی سفارش با موفقیت تأیید شد.');
+   $lockedOrder->update(['stock_deducted_at'=>now()]);
+   $this->changeStatus($lockedOrder, 'processing', 'پرداخت و کسر موجودی سفارش با موفقیت تأیید شد.');
    return true;
   });
  }
