@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'WebSite','name'=>config('app.name'),'url'=>route('home'),'inLanguage'=>'fa-IR'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'Organization','name'=>config('app.name'),'url'=>route('home')],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}" type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'WebSite','name'=>config('app.name'),'url'=>route('home'),'inLanguage'=>'fa-IR'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
+<script nonce="{{ request()->attributes->get('csp_nonce') }}" type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'Organization','name'=>config('app.name'),'url'=>route('home')],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
 @endpush
 @section('content')
 <section class="hero"><div class="hero-copy"><span class="eyebrow"><i></i> THE ART OF EVERYDAY CARE</span><h1>زیبایی،<br><em>در تعادل</em> معنا می‌شود.</h1><p>مجموعه‌ای از انتخاب‌های هوشمندانه برای مراقبت از پوست، مو و لحظه‌های کوچکِ حال خوب.</p><a class="button button-dark" href="{{ route('shop') }}">کشف مجموعه <span>←</span></a><div class="hero-note"><span>01 / 03</span><span>CURATED FOR YOU</span></div></div>
