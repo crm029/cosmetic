@@ -22,6 +22,11 @@ class AdminMfaTest extends TestCase
         ]);
     }
 
+    public function test_totp_implementation_matches_rfc_6238_sha1_vector(): void
+    {
+        $this->assertSame('287082', app(TotpService::class)->codeAt('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', 59));
+    }
+
     public function test_admin_panel_requires_totp_enrollment_after_password_login(): void
     {
         $admin = $this->admin();
