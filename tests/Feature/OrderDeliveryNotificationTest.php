@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Order;
+use App\Models\User;
 use App\Services\SmsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -58,7 +59,7 @@ class OrderDeliveryNotificationTest extends TestCase
                 ->push('0', 200),
         ]);
 
-        $admin = \\App\\Models\\User::create([
+        $admin = User::create([
             'name' => 'مدیر پیامک',
             'mobile' => '09123456781',
             'password' => 'a-secure-test-password',
@@ -96,7 +97,7 @@ class OrderDeliveryNotificationTest extends TestCase
 
     public function test_admin_cannot_retry_a_shipment_sms_before_order_is_shipped(): void
     {
-        $admin = \\App\\Models\\User::create([
+        $admin = User::create([
             'name' => 'مدیر پیامک',
             'mobile' => '09123456782',
             'password' => 'a-secure-test-password',
