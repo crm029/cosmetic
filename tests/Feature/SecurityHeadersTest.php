@@ -32,6 +32,15 @@ class SecurityHeadersTest extends TestCase
         $this->assertMatchesRegularExpression('/nonce="[^"]+"/', $response->getContent());
     }
 
+    public function test_content_security_policy_limits_images_and_network_requests_to_same_origin(): void
+    {
+        $policy = $this->get('/')->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("img-src 'self' data: blob:", $policy);
+        $this->assertStringContainsString("connect-src 'self'", $policy);
+        $this->assertDoesNotMatchRegularExpression("/(?:img-src|connect-src)[^;]*https:/", $policy);
+    }
+
     public function test_customer_and_admin_pages_are_not_cached(): void
     {
         foreach (['/admin/login', '/cart', '/checkout', '/order/track'] as $path) {
