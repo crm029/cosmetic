@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 class ProductController extends Controller {
  public function index(Request $request): View {
@@ -34,10 +35,12 @@ class ProductController extends Controller {
  }
  public function show(Product $product): View {
   abort_unless($product->is_active,404);
+  $reserved=(int)DB::table('stock_reservations')->where('product_id',$product->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+  $availableStock=max(0,(int)$product->stock-$reserved);
   $images=[];
   if($product->image)$images[]=asset('storage/'.$product->image);
   foreach($product->gallery??[] as $image)$images[]=asset('storage/'.$image);
-  $productSchema=['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'sku'=>$product->sku,'category'=>$product->category?->name,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$product->stock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]];
+  $productSchema=['@context'=>'https://schema.org','@type'=>'Product','name'=>$product->name,'description'=>$product->short_description ?: $product->description,'sku'=>$product->sku,'category'=>$product->category?->name,'offers'=>['@type'=>'Offer','priceCurrency'=>'IRR','price'=>$product->price*10,'availability'=>$availableStock>0?'https://schema.org/InStock':'https://schema.org/OutOfStock','url'=>url()->current()]];
   if($images)$productSchema['image']=$images;
   $breadcrumbSchema=['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
    ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
@@ -45,6 +48,6 @@ class ProductController extends Controller {
    ['@type'=>'ListItem','position'=>3,'name'=>$product->name,'item'=>url()->current()],
   ]];
   $relatedProducts=Product::with('category')->where('is_active',true)->where('id','!=',$product->id)->when($product->category_id,fn($q)=>$q->where('category_id',$product->category_id))->latest()->take(4)->get();
-  return view('shop.show',['product'=>$product,'relatedProducts'=>$relatedProducts,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
+  return view('shop.show',['product'=>$product,'availableStock'=>$availableStock,'relatedProducts'=>$relatedProducts,'productSchema'=>$productSchema,'breadcrumbSchema'=>$breadcrumbSchema,'seoTitle'=>$product->seo_title ?: $product->name.' | خرید آنلاین','seoDescription'=>$product->seo_description ?: ($product->short_description ?: 'مشاهده مشخصات محصول '.$product->name)]);
  }
 }
