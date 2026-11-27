@@ -237,7 +237,7 @@ class AdminController extends Controller {
     return $fulfillment->deductStock($locked);
    });
   } catch(\RuntimeException $e) {
-   DB::transaction(function()use($order,$reservations){
+   DB::transaction(function()use($order,$reservations,$e){
     $locked=Order::whereKey($order->id)->lockForUpdate()->first();
     if($locked&&$locked->payment_status==='paid'&&!$locked->stock_deducted_at){
      $reservations->releaseForOrder($locked);
