@@ -13,9 +13,10 @@ class OrderFulfillmentService {
    if($lockedOrder->status==='cancelled'){$lockedOrder->update(['status'=>'refund_required']);return false;}
    $requiredByProduct=$lockedOrder->items()->get()->groupBy('product_id')->map(fn($items)=>(int)$items->sum('quantity'));
    $products=Product::whereIn('id',$requiredByProduct->keys())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
-   $reservations=DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->lockForUpdate()->get();
+   $reservations=DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->get();
    if($reservations->isNotEmpty()){
-    $active=$reservations->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->groupBy('product_id')->map(fn($rows)=>(int)$rows->sum('quantity'));
+    $activeRows=DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->lockForUpdate()->get();
+    $active=$activeRows->groupBy('product_id')->map(fn($rows)=>(int)$rows->sum('quantity'));
     foreach($requiredByProduct as $productId=>$quantity){
      if((int)($active[$productId]??0)!==$quantity){
       DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['released_at'=>now(),'updated_at'=>now()]);
