@@ -50,6 +50,8 @@ jobs:
           php artisan key:generate
       - name: Test fresh migrations and seeders
         run: "DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan migrate:fresh --seed"
+      - name: Validate scheduled maintenance tasks
+        run: php artisan schedule:list
       - name: Lint PHP source
         run: "find app routes database -name '*.php' -print0 | xargs -0 -n1 php -l"
       - name: Check JavaScript syntax
