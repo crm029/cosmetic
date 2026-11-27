@@ -224,4 +224,67 @@ class StockReservationTest extends TestCase
         $this->assertDatabaseHas('stock_reservations', ['order_id' => $reservedOrder->id, 'quantity' => 2, 'released_at' => null]);
     }
 
+
+    public function test_failed_product_update_keeps_old_media_and_cleans_new_uploads(): void
+    {
+        Storage::fake('public');
+        $admin = User::create(['name' => 'مدیر فایل محصول', 'mobile' => '09123456784', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $oldImage = 'products/old-product-image.jpg';
+        Storage::disk('public')->put($oldImage, 'old-image-content');
+        $product = Product::create([
+            'name' => 'محصول دارای تصویر', 'slug' => 'product-with-media-rollback',
+            'price' => 100000, 'stock' => 5, 'image' => $oldImage, 'is_active' => true,
+        ]);
+        $order = $this->makeOrder([['product' => $product, 'quantity' => 4]], 'CS-MEDIA-ROLLBACK-01');
+        app(StockReservationService::class)->reserveForOrder($order);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => $product->price,
+            'stock' => 3,
+            'is_active' => true,
+            'image' => UploadedFile::fake()->image('replacement.jpg'),
+        ])->assertSessionHasErrors('stock');
+
+        Storage::disk('public')->assertExists($oldImage);
+        $this->assertCount(1, Storage::disk('public')->allFiles('products'));
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'image' => $oldImage, 'stock' => 5]);
+    }
+
+    public function test_successful_product_image_replacement_deletes_old_file_after_database_update(): void
+    {
+        Storage::fake('public');
+        $admin = User::create(['name' => 'مدیر تعویض تصویر', 'mobile' => '09123456785', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $oldImage = 'products/old-product-image.jpg';
+        Storage::disk('public')->put($oldImage, 'old-image-content');
+        $product = Product::create([
+            'name' => 'محصول قابل ویرایش', 'slug' => 'product-media-replacement',
+            'price' => 100000, 'stock' => 5, 'image' => $oldImage, 'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => $product->price,
+            'stock' => 7,
+            'is_active' => true,
+            'image' => UploadedFile::fake()->image('new-product.jpg'),
+        ])->assertRedirect(route('admin.products'))->assertSessionHasNoErrors();
+
+        Storage::disk('public')->assertMissing($oldImage);
+        $updated = $product->fresh();
+        $this->assertNotSame($oldImage, $updated->image);
+        Storage::disk('public')->assertExists($updated->image);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 7]);
+        $this->assertDatabaseHas('stock_movements', [
+            'product_id' => $product->id,
+            'type' => 'adjustment',
+            'quantity' => 2,
+            'previous_stock' => 5,
+            'new_stock' => 7,
+        ]);
+    }
+
+
 }
