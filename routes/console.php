@@ -1,6 +1,7 @@
 <?php
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 Artisan::command('store:about',function(){ $this->comment('Cosmetic Store - Laravel storefront'); })->purpose('Display store project information');
 Artisan::command('store:make-admin',function(){
  $name=trim((string)$this->ask('نام مدیر'));$mobile=trim((string)$this->ask('شماره موبایل مدیر'));
@@ -10,4 +11,8 @@ Artisan::command('store:make-admin',function(){
  if(strlen((string)$password)<12){$this->error('رمز عبور باید حداقل 12 کاراکتر باشد.');return 1;}
  User::create(['name'=>$name,'mobile'=>$mobile,'password'=>$password,'is_admin'=>true]);
  $this->info('حساب مدیر با موفقیت ساخته شد.');return 0;
-})->purpose('Create the first store administrator securely from the command line');\nSchedule::call(fn () => app(\\App\\Services\\StockReservationService::class)->releaseExpired())->everyMinute()->withoutOverlapping();\n
+})->purpose('Create the first store administrator securely from the command line');
+
+Schedule::call(fn () => app(\App\Services\StockReservationService::class)->releaseExpired())
+ ->everyMinute()
+ ->withoutOverlapping();
