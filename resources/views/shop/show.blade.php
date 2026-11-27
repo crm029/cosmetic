@@ -62,6 +62,8 @@
     </div>
 </section>
 
+@include('shop.partials.reviews')
+
 @if($relatedProducts->isNotEmpty())
 <section class="section-block related-products">
     <div class="section-heading">
