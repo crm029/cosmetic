@@ -128,8 +128,13 @@ class AdminController extends Controller {
    if($locked->status==='paid_stock_issue'&&!$locked->stock_deducted_at)return 'ابتدا مشکل موجودی را از طریق گزینه تلاش مجدد برای کسر موجودی برطرف کنید.';
    if($locked->payment_status==='paid'&&$data['status']==='cancelled')return 'سفارش پرداخت‌شده را نمی‌توان بدون ثبت بازپرداخت لغو کرد.';
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
-   $rank=['pending'=>0,'processing'=>1,'shipped'=>2,'delivered'=>3];
-   if(isset($rank[$locked->status],$rank[$data['status']])&&$rank[$data['status']]<$rank[$locked->status])return 'وضعیت سفارش امکان بازگشت به مرحله قبلی را ندارد.';
+   $allowedTransitions=[
+    'pending'=>['pending','processing','cancelled'],
+    'processing'=>['processing','shipped'],
+    'shipped'=>['shipped','delivered'],
+    'delivered'=>['delivered'],
+   ];
+   if(!in_array($data['status'],$allowedTransitions[$locked->status]??[],true))return 'برای ثبت این وضعیت، ابتدا باید مرحله قبلی سفارش تکمیل شود.';
    $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];if($data['status']==='cancelled'&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);$locked->update($changes);return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
