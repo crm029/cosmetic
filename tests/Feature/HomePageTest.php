@@ -1602,4 +1602,45 @@ class HomePageTest extends TestCase
             ->assertOk();
     }
 
+    public function test_admin_order_status_form_is_hidden_for_locked_order_states(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر وضعیت‌های قفل‌شده',
+            'mobile' => '09123456784',
+            'password' => 'a-secure-test-password',
+            'is_admin' => true,
+        ]);
+
+        $lockedOrders = [
+            ['number' => 'CS-LOCK-STOCK-01', 'status' => 'paid_stock_issue', 'payment' => 'paid'],
+            ['number' => 'CS-LOCK-REFUND-01', 'status' => 'refund_required', 'payment' => 'paid'],
+            ['number' => 'CS-LOCK-CANCEL-01', 'status' => 'cancelled', 'payment' => 'unpaid'],
+        ];
+
+        foreach ($lockedOrders as $index => $data) {
+            $order = Order::create([
+                'order_number' => $data['number'],
+                'customer_name' => 'مشتری وضعیت قفل‌شده',
+                'mobile' => '09123456789',
+                'shipping_address' => 'تهران، نشانی تست',
+                'subtotal' => 100000,
+                'shipping_amount' => 0,
+                'total' => 100000,
+                'status' => $data['status'],
+                'payment_status' => $data['payment'],
+            ]);
+
+            $response = $this->actingAs($admin)->get(route('admin.orders.show', $order))->assertOk();
+            $response->assertDontSee(route('admin.orders.update', $order), false);
+
+            if ($index === 0) {
+                $response->assertSee('تا زمان رفع مشکل موجودی');
+            } elseif ($index === 1) {
+                $response->assertSee('تا زمان ثبت بازپرداخت');
+            } else {
+                $response->assertSee('امکان فعال‌سازی مجدد');
+            }
+        }
+    }
+
 }
