@@ -33,16 +33,16 @@ Route::get('/faq',fn()=>view('pages.faq',['seoTitle'=>'پرسش‌های متد�
 Route::get('/contact',[ContactController::class,'index'])->name('contact.index');
 Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
-Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:5,1')->name('orders.track.lookup');
-Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware('throttle:5,1')->name('orders.pay.retry');
+Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:order-track')->name('orders.track.lookup');
+Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware('throttle:order-payment-retry')->name('orders.pay.retry');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/account/login',[CustomerAuthController::class,'show'])->name('customer.login');
-Route::post('/account/send-code',[CustomerAuthController::class,'sendCode'])->middleware('throttle:3,10')->name('customer.send-code');
-Route::post('/account/verify',[CustomerAuthController::class,'verify'])->middleware('throttle:5,10')->name('customer.verify');
+Route::post('/account/send-code',[CustomerAuthController::class,'sendCode'])->middleware('throttle:customer-otp-send')->name('customer.send-code');
+Route::post('/account/verify',[CustomerAuthController::class,'verify'])->middleware('throttle:customer-otp-verify')->name('customer.verify');
 Route::get('/account',[CustomerAuthController::class,'index'])->name('account.index');
 Route::middleware('auth')->group(function(){ Route::post('/account/logout',[CustomerAuthController::class,'logout'])->name('account.logout'); Route::post('/product/{product}/reviews',[ProductReviewController::class,'store'])->middleware('throttle:5,10')->name('products.reviews.store'); });
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
-Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
+Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:admin-login')->name('admin.login.submit');
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
  Route::get('/',[AdminController::class,'dashboard'])->name('dashboard');
  Route::post('/logout',[AdminAuthController::class,'logout'])->name('logout');
