@@ -163,8 +163,31 @@ class AdminController extends Controller {
   if(($newLogo||$removeLogo)&&$oldLogo&&$oldLogo!==$newLogo)Storage::disk('public')->delete($oldLogo);
   return back()->with('success','تنظیمات فروشگاه ذخیره شد.');
  }
- public function messages(): View { return view('admin.messages.index',['messages'=>ContactMessage::latest()->paginate(25)]); }
- public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
+ public function messages(Request $request): View {
+  $filters=$request->validate(['q'=>['nullable','string','max:120'],'status'=>['nullable','in:all,unread,read']]);
+  $messages=ContactMessage::query()
+   ->when(!empty($filters['q']),function($query)use($filters){
+    $term='%'.$filters['q'].'%';
+    $query->where(function($search)use($term){
+     $search->where('name','like',$term)->orWhere('mobile','like',$term)
+      ->orWhere('email','like',$term)->orWhere('subject','like',$term)->orWhere('message','like',$term);
+    });
+   })
+   ->when(($filters['status']??'all')==='unread',fn($query)=>$query->where('is_read',false))
+   ->when(($filters['status']??'all')==='read',fn($query)=>$query->where('is_read',true))
+   ->latest()->paginate(25)->withQueryString();
+  return view('admin.messages.index',[
+   'messages'=>$messages,
+   'unreadCount'=>ContactMessage::where('is_read',false)->count(),
+   'totalCount'=>ContactMessage::count(),
+   'filters'=>$filters,
+  ]);
+ }
+ public function markMessageRead(Request $request,ContactMessage $message) {
+  $data=$request->validate(['is_read'=>['required','boolean']]);
+  $message->update(['is_read'=>(bool)$data['is_read']]);
+  return back()->with('success',$data['is_read']?'پیام به‌عنوان خوانده‌شده ثبت شد.':'پیام به فهرست خوانده‌نشده‌ها برگشت.');
+ }
  public function orders(Request $request): View {
   $filters=$request->validate(['q'=>['nullable','string','max:100'],'status'=>['nullable','in:pending,processing,shipped,delivered,cancelled,paid_stock_issue,refund_required'],'payment_status'=>['nullable','in:unpaid,paid,failed,refunded']]);
   $orders=Order::when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('order_number','like',$term)->orWhere('customer_name','like',$term)->orWhere('mobile','like',$term);});})->when(!empty($filters['status']),fn($q)=>$q->where('status',$filters['status']))->when(!empty($filters['payment_status']),fn($q)=>$q->where('payment_status',$filters['payment_status']))->latest()->paginate(25)->withQueryString();
