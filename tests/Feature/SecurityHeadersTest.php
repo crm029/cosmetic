@@ -34,7 +34,7 @@ class SecurityHeadersTest extends TestCase
         $this->get('/')
             ->assertHeaderMissing('Strict-Transport-Security');
 
-        $this->get('/', ['HTTPS' => 'on'])
+        $this->get('https://localhost/')
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 }
