@@ -45,7 +45,7 @@ class CatalogManagementTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin)
+        $this->actingAsAdmin($admin)
             ->delete(route('admin.categories.delete', $category))
             ->assertRedirect()
             ->assertSessionHasNoErrors();
@@ -59,7 +59,7 @@ class CatalogManagementTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)->post(route('admin.products.store'), [
+        $this->actingAsAdmin($admin)->post(route('admin.products.store'), [
             'name' => 'مدل سه‌بعدی نامعتبر',
             'slug' => 'invalid-glb-product',
             'price' => 150000,
@@ -87,7 +87,7 @@ class CatalogManagementTest extends TestCase
             . pack('V', $chunkLength) . 'JSON' . $json
             . pack('V', strlen($binary)) . "BIN\0" . $binary;
 
-        $this->actingAs($admin)->post(route('admin.products.store'), [
+        $this->actingAsAdmin($admin)->post(route('admin.products.store'), [
             'name' => 'محصول با مدل سه‌بعدی',
             'slug' => 'valid-glb-product',
             'price' => 150000,
@@ -114,7 +114,7 @@ class CatalogManagementTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        $this->actingAsAdmin($admin)->put(route('admin.categories.update', $category), [
             'name' => 'دسته جدید',
             'slug' => $category->slug,
             'is_active' => true,
@@ -161,7 +161,7 @@ class CatalogManagementTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        $this->actingAsAdmin($admin)->put(route('admin.categories.update', $category), [
             'name' => $category->name,
             'slug' => $category->slug,
             'is_active' => true,
@@ -190,7 +190,7 @@ class CatalogManagementTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        $this->actingAsAdmin($admin)->put(route('admin.products.update', $product), [
             'name' => $product->name,
             'slug' => $product->slug,
             'price' => $product->price,
