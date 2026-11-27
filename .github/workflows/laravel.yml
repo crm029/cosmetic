@@ -82,7 +82,7 @@ jobs:
       - name: Generate lockfile only when absent
         run: |
           if [ ! -f composer.lock ]; then
-            composer update --no-interaction --prefer-dist --no-install --no-scripts
+            composer update --no-interaction --prefer-dist --no-install --no-scripts --no-plugins
             composer validate --no-check-publish
             git add composer.lock
             git config user.name "github-actions[bot]"
