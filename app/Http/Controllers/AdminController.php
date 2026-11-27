@@ -41,6 +41,8 @@ class AdminController extends Controller {
   DB::transaction(function()use($product,$data,$requestedStock){
    $locked=Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
    $previousStock=(int)$locked->stock;
+   $reserved=(int)DB::table('stock_reservations')->where('product_id',$locked->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+   if($requestedStock<$reserved)throw ValidationException::withMessages(['stock'=>'موجودی جدید نمی‌تواند از تعداد رزروشده برای سفارش‌های در انتظار کمتر باشد.']);
    $locked->update($data);
    if($requestedStock!==$previousStock){
     $locked->stock=$requestedStock;$locked->save();
@@ -50,7 +52,7 @@ class AdminController extends Controller {
   return redirect()->route('admin.products')->with('success','محصول به‌روزرسانی شد.');
  }
  public function stockHistory(Product $product): View { return view('admin.products.stock-history',['product'=>$product,'movements'=>StockMovement::with(['admin','order'])->where('product_id',$product->id)->latest()->paginate(30)]); }
- public function deleteProduct(Product $product) { if($product->image)Storage::disk('public')->delete($product->image);foreach($product->gallery??[] as $image)Storage::disk('public')->delete($image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);$product->delete();return back()->with('success','محصول حذف شد.'); }
+ public function deleteProduct(Product $product) { $deleted=DB::transaction(function()use($product){$locked=Product::whereKey($product->id)->lockForUpdate()->firstOrFail();$reserved=(int)DB::table('stock_reservations')->where('product_id',$locked->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');if($reserved>0)return false;$locked->delete();return true;});if(!$deleted)return back()->withErrors(['product'=>'این محصول در سفارش‌های در انتظار پرداخت رزرو شده و فعلاً قابل حذف نیست.']);if($product->image)Storage::disk('public')->delete($product->image);foreach($product->gallery??[] as $image)Storage::disk('public')->delete($image);if($product->model_3d)Storage::disk('public')->delete($product->model_3d);return back()->with('success','محصول حذف شد.'); }
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
  public function storeCategory(Request $request) {
