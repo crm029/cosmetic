@@ -68,6 +68,15 @@ class LoyaltyPointsTest extends TestCase
         ]);
     }
 
+    public function test_customer_account_displays_the_loyalty_balance_and_earning_rule(): void
+    {
+        $user = User::create(['name' => 'مشتری حساب', 'mobile' => '09123456777', 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertOk()
+            ->assertSee('امتیاز وفاداری شما')
+            ->assertSee('هر ۱۰٬۰۰۰ تومان خرید خالص = ۱ امتیاز');
+    }
+
     public function test_guest_orders_do_not_create_unowned_loyalty_points(): void
     {
         $product = Product::create([
