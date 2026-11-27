@@ -66,7 +66,7 @@ class CheckoutController extends Controller {
      $coupon->increment('used_count');
     }
     $total=max(0,$subtotal+$shipping-$discount);
-    $created=Order::create(['coupon_id'=>$coupon?->id,'coupon_code'=>$coupon?->code,'discount_amount'=>$discount,'shipping_method'=>$data['shipping_method'],'order_number'=>'CS-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),'customer_name'=>$data['customer_name'],'mobile'=>$data['mobile'],'email'=>$data['email']??null,'shipping_address'=>$data['shipping_address'],'subtotal'=>$subtotal,'shipping_amount'=>$shipping,'total'=>$total,'status'=>'pending','payment_status'=>'unpaid','notes'=>$data['notes']??null]);
+    $created=Order::create(['user_id'=>auth()->check()&&!auth()->user()->is_admin?auth()->id():null,'coupon_id'=>$coupon?->id,'coupon_code'=>$coupon?->code,'discount_amount'=>$discount,'shipping_method'=>$data['shipping_method'],'order_number'=>'CS-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),'customer_name'=>$data['customer_name'],'mobile'=>$data['mobile'],'email'=>$data['email']??null,'shipping_address'=>$data['shipping_address'],'subtotal'=>$subtotal,'shipping_amount'=>$shipping,'total'=>$total,'status'=>'pending','payment_status'=>'unpaid','notes'=>$data['notes']??null]);
     foreach($products as $p){$qty=(int)$cart[$p->id];OrderItem::create(['order_id'=>$created->id,'product_id'=>$p->id,'product_name'=>$p->name,'unit_price'=>$p->price,'quantity'=>$qty,'line_total'=>$p->price*$qty]);}
     OrderStatusHistory::create(['order_id'=>$created->id,'from_status'=>null,'to_status'=>'pending','actor_type'=>'customer','note'=>'سفارش توسط مشتری ثبت شد.']);
     $reservations->reserveForOrder($created);
