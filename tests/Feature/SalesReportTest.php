@@ -57,7 +57,7 @@ class SalesReportTest extends TestCase
             ->assertSee('100,000')
             ->assertSee('سرم آبرسان')
             ->assertDontSee('کرم مرطوب‌کننده')
-            ->assertSee('REP-PAID-01');
+            ->assertSee('مشتری گزارش');
     }
 
     public function test_sales_report_rejects_ranges_longer_than_one_year(): void
