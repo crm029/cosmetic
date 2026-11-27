@@ -147,10 +147,20 @@ class AdminController extends Controller {
  }
  public function settings(): View { return view('admin.settings', ['settings'=>StoreSetting::current()]); }
  public function updateSettings(Request $request) {
-  $data=$request->validate(['store_name'=>['required','string','max:150'],'tagline'=>['nullable','string','max:255'],'shipping_fee_toman'=>['required','integer','min:0','max:100000000'],'free_shipping_threshold_toman'=>['required','integer','min:0','max:100000000'],'support_mobile'=>['nullable','regex:/^09[0-9]{9}$/'],'support_email'=>['nullable','email','max:190'],'address'=>['nullable','string','max:1500'],'ink_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'accent_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'logo'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:2048']]);
-  $settings=StoreSetting::current();unset($data['logo']);
-  if($request->hasFile('logo')){if($settings->logo_path)Storage::disk('public')->delete($settings->logo_path);$data['logo_path']=$request->file('logo')->store('store','public');}
-  $settings->update($data);return back()->with('success','تنظیمات فروشگاه ذخیره شد.');
+  $data=$request->validate(['store_name'=>['required','string','max:150'],'tagline'=>['nullable','string','max:255'],'shipping_fee_toman'=>['required','integer','min:0','max:100000000'],'free_shipping_threshold_toman'=>['required','integer','min:0','max:100000000'],'support_mobile'=>['nullable','regex:/^09[0-9]{9}$/'],'support_email'=>['nullable','email','max:190'],'address'=>['nullable','string','max:1500'],'ink_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'accent_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'logo'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:2048'],'remove_logo'=>['nullable','boolean']]);
+  $settings=StoreSetting::current();$oldLogo=$settings->logo_path;$newLogo=null;
+  $removeLogo=$request->boolean('remove_logo')&&!$request->hasFile('logo');
+  unset($data['logo'],$data['remove_logo']);
+  try {
+   if($request->hasFile('logo')){$newLogo=$request->file('logo')->store('store','public');$data['logo_path']=$newLogo;}
+   elseif($removeLogo)$data['logo_path']=null;
+   $settings->update($data);
+  } catch(\Throwable $e) {
+   if($newLogo)Storage::disk('public')->delete($newLogo);
+   throw $e;
+  }
+  if(($newLogo||$removeLogo)&&$oldLogo&&$oldLogo!==$newLogo)Storage::disk('public')->delete($oldLogo);
+  return back()->with('success','تنظیمات فروشگاه ذخیره شد.');
  }
  public function messages(): View { return view('admin.messages.index',['messages'=>ContactMessage::latest()->paginate(25)]); }
  public function markMessageRead(ContactMessage $message) { $message->update(['is_read'=>true]);return back()->with('success','پیام خوانده‌شده علامت‌گذاری شد.'); }
