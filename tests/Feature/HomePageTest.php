@@ -1751,4 +1751,84 @@ class HomePageTest extends TestCase
             ->assertSee('300,000');
     }
 
+    public function test_customer_cannot_create_a_second_payment_link_while_previous_authority_is_active(): void
+    {
+        $order = Order::create([
+            'order_number' => 'CS-DUPLICATE-AUTHORITY-01',
+            'customer_name' => 'مشتری لینک پرداخت',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'S0000000000000000000000000000999',
+        ]);
+
+        Http::fake();
+
+        $this->post(route('orders.pay.retry', $order), [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'payment_authority' => 'S0000000000000000000000000000999',
+        ]);
+        Http::assertNothingSent();
+    }
+
+    public function test_failed_payment_callback_releases_reservation_and_clears_old_authority(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول پرداخت ناموفق',
+            'slug' => 'failed-payment-reservation',
+            'price' => 100000,
+            'stock' => 3,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-FAILED-CALLBACK-01',
+            'customer_name' => 'مشتری پرداخت ناموفق',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+            'payment_authority' => 'S0000000000000000000000000000888',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'unit_price' => 100000,
+            'quantity' => 1,
+            'line_total' => 100000,
+        ]);
+        \Illuminate\Support\Facades\DB::table('stock_reservations')->insert([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'expires_at' => now()->addMinutes(20),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get('/payment/callback?Authority='.$order->payment_authority.'&Status=NOK')
+            ->assertRedirect()
+            ->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'payment_authority' => null,
+            'payment_status' => 'unpaid',
+        ]);
+        $this->assertNotNull(\Illuminate\Support\Facades\DB::table('stock_reservations')
+            ->where('order_id', $order->id)->value('released_at'));
+    }
+
 }
