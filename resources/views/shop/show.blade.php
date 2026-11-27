@@ -44,13 +44,13 @@
             @endif
             <strong class="detail-price">{{ number_format($product->price) }} تومان</strong>
         </div>
-        <p class="stock-note">{{ $product->stock > 0 ? 'موجود در فروشگاه' : 'در حال حاضر ناموجود' }}</p>
+        <p class="stock-note">{{ $availableStock > 0 ? 'موجود در فروشگاه' : 'در حال حاضر ناموجود یا رزروشده' }}</p>
 
-        @if($product->stock > 0)
+        @if($availableStock > 0)
             <form method="POST" action="{{ route('cart.add',$product) }}" class="add-cart-form">
                 @csrf
                 <label>تعداد
-                    <input type="number" name="quantity" min="1" max="{{ min(20,$product->stock) }}" value="1">
+                    <input type="number" name="quantity" min="1" max="{{ min(20,$availableStock) }}" value="1">
                 </label>
                 <button class="button button-dark" type="submit">افزودن به سبد خرید <span>←</span></button>
             </form>
