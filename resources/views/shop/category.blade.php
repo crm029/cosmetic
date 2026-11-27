@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode([
+<script nonce="{{ request()->attributes->get('csp_nonce') }}" type="application/ld+json">{!! json_encode([
  '@context'=>'https://schema.org',
  '@type'=>'CollectionPage',
  'name'=>$category->name,
@@ -18,7 +18,7 @@
   ])->map(fn($item)=>array_filter($item,fn($value)=>$value!==null))->all(),
  ]
 ],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) !!}</script>
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
+<script nonce="{{ request()->attributes->get('csp_nonce') }}" type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
  ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
  ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
  ['@type'=>'ListItem','position'=>3,'name'=>$category->name,'item'=>url()->current()]
