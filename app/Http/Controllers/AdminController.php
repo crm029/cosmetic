@@ -36,7 +36,7 @@ class AdminController extends Controller {
  public function storeProduct(Request $request) {
   $data=$this->validatedProduct($request);
   $galleryFiles=$request->file('gallery_images',[]);
-  unset($data['gallery_images'],$data['remove_gallery']);
+  unset($data['gallery_images'],$data['remove_gallery'],$data['remove_image'],$data['remove_model_3d']);
   $newFiles=[];
   try {
    if($galleryFiles){$data['gallery']=[];foreach($galleryFiles as $file){$stored=$file->store('products/gallery','public');$data['gallery'][]=$stored;$newFiles[]=$stored;}}
@@ -57,7 +57,7 @@ class AdminController extends Controller {
  public function updateProduct(Request $request,Product $product) {
   $data=$this->validatedProduct($request,$product);
   $galleryFiles=$request->file('gallery_images',[]);
-  unset($data['gallery_images'],$data['remove_gallery']);
+  unset($data['gallery_images'],$data['remove_gallery'],$data['remove_image'],$data['remove_model_3d']);
   $gallery=$product->gallery??[];
   $removedGallery=[];
   foreach((array)$request->input('remove_gallery',[]) as $index){
@@ -73,10 +73,14 @@ class AdminController extends Controller {
    if($request->hasFile('image')){
     $data['image']=$request->file('image')->store('products','public');$newFiles[]=$data['image'];
     if($product->image)$obsoleteFiles[]=$product->image;
+   } elseif($request->boolean('remove_image')){
+    $data['image']=null;if($product->image)$obsoleteFiles[]=$product->image;
    }
    if($request->hasFile('model_3d')){
     $data['model_3d']=$request->file('model_3d')->store('models','public');$newFiles[]=$data['model_3d'];
     if($product->model_3d)$obsoleteFiles[]=$product->model_3d;
+   } elseif($request->boolean('remove_model_3d')){
+    $data['model_3d']=null;if($product->model_3d)$obsoleteFiles[]=$product->model_3d;
    }
    if(empty($data['slug']))$data['slug']=$product->slug;
    $requestedStock=(int)$data['stock'];unset($data['stock']);
@@ -216,7 +220,7 @@ class AdminController extends Controller {
    'sku'=>['nullable','string','max:100',Rule::unique('products','sku')->ignore($product?->id)],
    'short_description'=>['nullable','string','max:500'],'description'=>['nullable','string'],
    'price'=>['required','integer','min:0'],'compare_price'=>['nullable','integer','min:0','gt:price'],
-   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'model_3d'=>['nullable','file','max:20480',function($attribute,$file,$fail){
+   'stock'=>['required','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'gallery_images'=>['nullable','array','max:8'],'gallery_images.*'=>['image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'remove_gallery'=>['nullable','array'],'remove_gallery.*'=>['integer','min:0'],'remove_image'=>['nullable','boolean'],'remove_model_3d'=>['nullable','boolean'],'model_3d'=>['nullable','file','max:20480',function($attribute,$file,$fail){
     $path=$file->getRealPath();$handle=$path?@fopen($path,'rb'):false;
     if(!$handle){$fail('فایل مدل سه‌بعدی قابل خواندن نیست.');return;}
     $header=fread($handle,20);fclose($handle);
