@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Services\ZarinpalService;
 use App\Services\SmsService;
 use App\Services\OrderFulfillmentService;
