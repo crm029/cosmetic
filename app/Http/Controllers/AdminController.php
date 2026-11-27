@@ -20,7 +20,16 @@ class AdminController extends Controller {
  public function dashboard(): View { return view('admin.dashboard',['products'=>Product::count(),'categories'=>Category::count(),'orderCount'=>Order::count(),'paidRevenue'=>Order::where('payment_status','paid')->sum('total'),'pendingCount'=>Order::where('payment_status','unpaid')->count(),'lowStockCount'=>Product::where('is_active',true)->where('stock','>',0)->where('stock','<=',5)->count(),'unreadMessages'=>ContactMessage::where('is_read',false)->count(),'orders'=>Order::latest()->take(8)->get()]); }
  public function products(Request $request): View {
   $filters=$request->validate(['q'=>['nullable','string','max:100'],'category_id'=>['nullable','integer','exists:categories,id'],'visibility'=>['nullable','in:active,inactive'],'stock_status'=>['nullable','in:low,out']]);
-  $products=Product::with('category')->when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('name','like',$term)->orWhere('sku','like',$term)->orWhere('slug','like',$term);});})->when(!empty($filters['category_id']),fn($q)=>$q->where('category_id',$filters['category_id']))->when(($filters['visibility']??null)==='active',fn($q)=>$q->where('is_active',true))->when(($filters['visibility']??null)==='inactive',fn($q)=>$q->where('is_active',false))->when(($filters['stock_status']??null)==='low',fn($q)=>$q->where('stock','>',0)->where('stock','<=',5))->when(($filters['stock_status']??null)==='out',fn($q)=>$q->where('stock',0))->latest()->paginate(20)->withQueryString();
+  $reservedQuery=DB::table('stock_reservations')->selectRaw('COALESCE(SUM(quantity), 0)')->whereColumn('product_id','products.id')->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now());
+  $availableExpression="products.stock - (SELECT COALESCE(SUM(quantity), 0) FROM stock_reservations WHERE stock_reservations.product_id = products.id AND stock_reservations.released_at IS NULL AND stock_reservations.consumed_at IS NULL AND stock_reservations.expires_at > ?)";
+  $products=Product::with('category')->select('products.*')->selectSub($reservedQuery,'reserved_stock')
+   ->when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($s)use($term){$s->where('name','like',$term)->orWhere('sku','like',$term)->orWhere('slug','like',$term);});})
+   ->when(!empty($filters['category_id']),fn($q)=>$q->where('category_id',$filters['category_id']))
+   ->when(($filters['visibility']??null)==='active',fn($q)=>$q->where('is_active',true))
+   ->when(($filters['visibility']??null)==='inactive',fn($q)=>$q->where('is_active',false))
+   ->when(($filters['stock_status']??null)==='low',function($q)use($availableExpression){$q->whereRaw("($availableExpression) BETWEEN 1 AND 5",[now()]);})
+   ->when(($filters['stock_status']??null)==='out',function($q)use($availableExpression){$q->whereRaw("($availableExpression) <= 0",[now()]);})
+   ->latest()->paginate(20)->withQueryString();
   return view('admin.products.index',['products'=>$products,'categories'=>Category::orderBy('name')->get()]);
  }
  public function createProduct(): View { return view('admin.products.form',['product'=>new Product(),'categories'=>Category::orderBy('name')->get()]); }
