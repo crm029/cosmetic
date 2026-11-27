@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider {
    $productImage=data_get($product,'image');$categoryImage=data_get($category,'image');
    $socialImage=$productImage?asset('storage/'.$productImage):($categoryImage?asset('storage/'.$categoryImage):($storeSettings->logo_path?asset('storage/'.$storeSettings->logo_path):null));
    $catalogFiltered=request()->filled('q')||request()->filled('category')||request()->filled('min_price')||request()->filled('max_price')||request()->boolean('in_stock')||(request()->filled('sort')&&request('sort')!=='latest');
-   $noIndex=request()->routeIs('cart.*','checkout.*','admin.*','orders.track*')||(request()->routeIs('shop')&&$catalogFiltered);
+   $noIndex=request()->routeIs('cart.*','checkout.*','admin.*','orders.track*','account.*','customer.login')||(request()->routeIs('shop')&&$catalogFiltered);
    $canonicalUrl=request()->url();
    if($product && filled($product->canonical_url)){
     $candidate=$product->canonical_url;
