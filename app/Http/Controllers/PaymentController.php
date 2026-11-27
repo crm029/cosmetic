@@ -25,10 +25,20 @@ class PaymentController extends Controller {
    $settlement=DB::transaction(function()use($order,$verifiedData){
     $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
     if(!in_array($locked->payment_status,['paid','refunded'],true)) {
+     $previousStatus=$locked->status;
      $changes=['payment_status'=>'paid','payment_ref_id'=>(string)($verifiedData['ref_id']??'')];
      if($locked->status==='cancelled')$changes['status']='refund_required';
      elseif($locked->status==='pending')$changes['status']='processing';
      $locked->update($changes);
+     if(isset($changes['status'])&&$changes['status']!==$previousStatus){
+      OrderStatusHistory::create([
+       'order_id'=>$locked->id,
+       'from_status'=>$previousStatus,
+       'to_status'=>$changes['status'],
+       'actor_type'=>'payment_gateway',
+       'note'=>'وضعیت سفارش پس از تأیید پرداخت توسط درگاه به‌روزرسانی شد.',
+      ]);
+     }
     }
     $locked->refresh();
     return ['status'=>$locked->status,'paid'=>in_array($locked->payment_status,['paid','refunded'],true),'payment_status'=>$locked->payment_status];
