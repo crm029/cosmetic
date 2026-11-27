@@ -1,6 +1,23 @@
 @extends('layouts.app')
 @push('head')
-<script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'CollectionPage','name'=>$category->name,'description'=>$category->seo_description ?: $category->description,'url'=>url()->current()],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script type="application/ld+json">{!! json_encode([
+ '@context'=>'https://schema.org',
+ '@type'=>'CollectionPage',
+ 'name'=>$category->name,
+ 'description'=>$category->seo_description ?: $category->description,
+ 'url'=>url()->current(),
+ 'mainEntity'=>[
+  '@type'=>'ItemList',
+  'numberOfItems'=>$products->count(),
+  'itemListElement'=>$products->values()->map(fn($product,$index)=>[
+   '@type'=>'ListItem',
+   'position'=>$index+1,
+   'url'=>route('products.show',$product),
+   'name'=>$product->name,
+   'image'=>$product->image ? asset('storage/'.$product->image) : null,
+  ])->map(fn($item)=>array_filter($item,fn($value)=>$value!==null))->all(),
+ ]
+],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
 <script type="application/ld+json">{!! json_encode(['@context'=>'https://schema.org','@type'=>'BreadcrumbList','itemListElement'=>[
  ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>route('home')],
  ['@type'=>'ListItem','position'=>2,'name'=>'فروشگاه','item'=>route('shop')],
