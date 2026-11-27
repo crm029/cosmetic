@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 function createRenderer(container,interactive=false){
  if(!window.WebGLRenderingContext)throw new Error('WebGL is unavailable');
  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
