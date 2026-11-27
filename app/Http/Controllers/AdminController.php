@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\StockMovement;
 use App\Services\OrderFulfillmentService;
+use App\Services\StockReservationService;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -83,11 +84,22 @@ class AdminController extends Controller {
   return view('admin.orders.index',compact('orders'));
  }
  public function showOrder(Order $order): View { return view('admin.orders.show',['order'=>$order->load('items')]); }
- public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,SmsService $sms) {
-  if($order->payment_status!=='paid'||$order->status==='refund_required'||$order->status==='cancelled')return back()->withErrors(['stock'=>'این سفارش برای بازپرداخت علامت‌گذاری شده یا قابل آماده‌سازی نیست.']);
-  if(!$fulfillment->deductStock($order))return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
+ public function reconcileOrder(Order $order,OrderFulfillmentService $fulfillment,StockReservationService $reservations,SmsService $sms) {
+  if($order->payment_status!=='paid'||in_array($order->status,['refund_required','cancelled'],true))return back()->withErrors(['stock'=>'این سفارش برای بازپرداخت علامت‌گذاری شده یا قابل آماده‌سازی نیست.']);
+  try {
+   $deducted=DB::transaction(function()use($order,$fulfillment,$reservations){
+    $locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+    if($locked->stock_deducted_at)return true;
+    if($locked->payment_status!=='paid'||in_array($locked->status,['refund_required','cancelled'],true))return false;
+    $reservations->reserveForOrder($locked);
+    return $fulfillment->deductStock($locked);
+   });
+  } catch(\\RuntimeException $e) {
+   return back()->withErrors(['stock'=>$e->getMessage()]);
+  }
+  if(!$deducted)return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
   $sms->sendOrderPaidOnce($order->fresh());
-  return back()->with('success','موجودی سفارش با موفقیت کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
+  return back()->with('success','رزرو تازه ثبت شد، موجودی سفارش کسر و سفارش به مرحله آماده‌سازی منتقل شد.');
  }
  public function recordRefund(Request $request,Order $order) {
   $data=$request->validate(['refund_ref_id'=>['required','string','max:120'],'refund_note'=>['required','string','min:5','max:1000']]);
@@ -101,9 +113,9 @@ class AdminController extends Controller {
   if($error)return back()->withErrors(['refund'=>$error]);
   return back()->with('success','بازپرداخت انجام‌شده در درگاه با شماره مرجع ثبت شد.');
  }
- public function updateOrderStatus(Request $request,Order $order,SmsService $sms) {
+ public function updateOrderStatus(Request $request,Order $order,SmsService $sms,StockReservationService $reservations) {
   $data=$request->validate(['status'=>['required','in:pending,processing,shipped,delivered,cancelled'],'shipping_carrier'=>['nullable','string','max:100'],'tracking_code'=>['nullable','string','max:120']]);
-  $error=DB::transaction(function()use($order,$data){
+  $error=DB::transaction(function()use($order,$data,$reservations){
    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
    if(in_array($locked->status,['cancelled','refund_required'],true)&&$data['status']!==$locked->status)return 'سفارش لغوشده یا نیازمند بازپرداخت قابل فعال‌سازی مجدد نیست.';
    if($locked->status==='paid_stock_issue'&&!$locked->stock_deducted_at)return 'ابتدا مشکل موجودی را از طریق گزینه تلاش مجدد برای کسر موجودی برطرف کنید.';
@@ -111,7 +123,7 @@ class AdminController extends Controller {
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
    $rank=['pending'=>0,'processing'=>1,'shipped'=>2,'delivered'=>3];
    if(isset($rank[$locked->status],$rank[$data['status']])&&$rank[$data['status']]<$rank[$locked->status])return 'وضعیت سفارش امکان بازگشت به مرحله قبلی را ندارد.';
-   $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];$locked->update($changes);return null;
+   $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];if($data['status']==='cancelled'&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);$locked->update($changes);return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
   if($data['status']==='shipped')$sms->sendShipmentUpdateOnce($order->fresh());
