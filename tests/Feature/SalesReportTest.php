@@ -52,7 +52,7 @@ class SalesReportTest extends TestCase
         OrderItem::create(['order_id' => $paid->id, 'product_name' => 'سرم آبرسان', 'unit_price' => 50000, 'quantity' => 2, 'line_total' => 100000]);
         OrderItem::create(['order_id' => $outside->id, 'product_name' => 'کرم مرطوب‌کننده', 'unit_price' => 200000, 'quantity' => 1, 'line_total' => 200000]);
 
-        $this->actingAs($admin)->get(route('admin.reports', ['from' => '2026-11-26', 'to' => '2026-11-26']))
+        $this->actingAsAdmin($admin)->get(route('admin.reports', ['from' => '2026-11-26', 'to' => '2026-11-26']))
             ->assertOk()
             ->assertSee('100,000')
             ->assertSee('سرم آبرسان')
@@ -64,7 +64,7 @@ class SalesReportTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)->get(route('admin.reports', [
+        $this->actingAsAdmin($admin)->get(route('admin.reports', [
             'from' => '2025-01-01',
             'to' => '2026-11-27',
         ]))->assertSessionHasErrors('to');
