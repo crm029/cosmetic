@@ -75,6 +75,21 @@ class AdminMfaTest extends TestCase
         $this->get('/admin')->assertRedirect(route('admin.mfa.setup'));
     }
 
+    public function test_mfa_recovery_requires_confirmed_server_console_command(): void
+    {
+        $admin = $this->admin();
+        $secret = app(TotpService::class)->generateSecret();
+        $admin->forceFill(['totp_secret' => $secret, 'totp_enabled_at' => now(), 'totp_last_used_step' => 12])->save();
+
+        $this->artisan('admin:mfa-reset', ['mobile' => $admin->mobile])
+            ->expectsConfirmation('This removes the current MFA device. Continue only after verifying server ownership?', 'yes')
+            ->assertExitCode(0);
+
+        $this->assertNull($admin->fresh()->totp_enabled_at);
+        $this->assertNull($admin->fresh()->totp_secret);
+        $this->assertSame(0, $admin->fresh()->totp_last_used_step);
+    }
+
     public function test_customer_cannot_view_another_phone_number_order_after_login(): void
     {
         $customer = User::create([
