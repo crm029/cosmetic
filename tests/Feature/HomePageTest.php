@@ -238,7 +238,7 @@ class HomePageTest extends TestCase
             'payment_status' => 'paid',
         ]);
 
-        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, ['status' => 'cancelled'])
+        $this->actingAsAdmin($admin)->patch('/admin/orders/'.$order->id, ['status' => 'cancelled'])
             ->assertSessionHasErrors('status');
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'processing']);
@@ -259,7 +259,7 @@ class HomePageTest extends TestCase
             'payment_status' => 'unpaid',
         ]);
 
-        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])
+        $this->actingAsAdmin($admin)->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])
             ->assertSessionHasErrors('status');
 
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'pending']);
@@ -270,7 +270,7 @@ class HomePageTest extends TestCase
         Storage::fake('public');
         $admin = User::create(['name' => 'مدیر گالری', 'mobile' => '09111111113', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
-        $this->actingAs($admin)->post('/admin/products', [
+        $this->actingAsAdmin($admin)->post('/admin/products', [
             'name' => 'سرم تست',
             'slug' => 'test-serum',
             'price' => 250000,
@@ -300,7 +300,7 @@ class HomePageTest extends TestCase
         Storage::fake('public');
         $admin = User::create(['name' => 'مدیر دسته', 'mobile' => '09111111114', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
-        $this->actingAs($admin)->post('/admin/categories', [
+        $this->actingAsAdmin($admin)->post('/admin/categories', [
             'name' => 'مراقبت بدن',
             'slug' => 'body-care-test',
             'image' => UploadedFile::fake()->image('body-care.jpg'),
@@ -351,7 +351,7 @@ class HomePageTest extends TestCase
             'message' => 'این یک پیام آزمایشی برای صندوق پشتیبانی است.',
         ]);
 
-        $this->actingAs($admin)->get('/admin/messages')->assertOk()->assertSee('این یک پیام آزمایشی');
+        $this->actingAsAdmin($admin)->get('/admin/messages')->assertOk()->assertSee('این یک پیام آزمایشی');
         $this->patch('/admin/messages/'.$message->id.'/read')->assertRedirect();
         $this->assertDatabaseHas('contact_messages', ['id' => $message->id, 'is_read' => true]);
     }
@@ -467,9 +467,9 @@ class HomePageTest extends TestCase
         Storage::fake('public');
         $admin = User::create(['name' => 'مدیر تنظیمات', 'mobile' => '09111111116', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
-        $this->actingAs($admin)->get('/admin/settings')->assertOk()->assertSee('تنظیمات فروشگاه');
+        $this->actingAsAdmin($admin)->get('/admin/settings')->assertOk()->assertSee('تنظیمات فروشگاه');
 
-        $this->actingAs($admin)->put('/admin/settings', [
+        $this->actingAsAdmin($admin)->put('/admin/settings', [
             'store_name' => 'فروشگاه زیبایی تست',
             'tagline' => 'مراقبت با انتخاب آگاهانه',
             'shipping_fee_toman' => 12000,
@@ -532,7 +532,7 @@ class HomePageTest extends TestCase
         ]);
         OrderItem::create(['order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'unit_price' => 100000, 'quantity' => 2, 'line_total' => 200000]);
 
-        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
+        $this->actingAsAdmin($admin)->post('/admin/orders/'.$order->id.'/reconcile')->assertSessionHasErrors('stock');
         $this->patch('/admin/orders/'.$order->id, ['status' => 'shipped'])->assertSessionHasErrors('status');
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
 
@@ -590,7 +590,7 @@ class HomePageTest extends TestCase
         Product::create(['name' => 'سرم فعال', 'slug' => 'active-serum', 'sku' => 'SERUM-101', 'price' => 100000, 'stock' => 4, 'is_active' => true]);
         Product::create(['name' => 'سرم پیش‌نویس', 'slug' => 'draft-serum', 'sku' => 'SERUM-102', 'price' => 120000, 'stock' => 2, 'is_active' => false]);
 
-        $this->actingAs($admin)->get('/admin/products?q=SERUM&visibility=active')
+        $this->actingAsAdmin($admin)->get('/admin/products?q=SERUM&visibility=active')
             ->assertOk()
             ->assertSee('سرم فعال')
             ->assertDontSee('سرم پیش‌نویس');
@@ -602,7 +602,7 @@ class HomePageTest extends TestCase
         $paid = Order::create(['order_number' => 'CS-PAID-FILTER', 'customer_name' => 'مشتری اول', 'mobile' => '09123456789', 'shipping_address' => 'تهران، خیابان نمونه', 'subtotal' => 100000, 'shipping_amount' => 0, 'total' => 100000, 'status' => 'processing', 'payment_status' => 'paid']);
         Order::create(['order_number' => 'CS-UNPAID-FILTER', 'customer_name' => 'مشتری دوم', 'mobile' => '09123456780', 'shipping_address' => 'تهران، خیابان نمونه', 'subtotal' => 100000, 'shipping_amount' => 0, 'total' => 100000, 'status' => 'pending', 'payment_status' => 'unpaid']);
 
-        $this->actingAs($admin)->get('/admin/orders?q=CS-PAID&status=processing&payment_status=paid')
+        $this->actingAsAdmin($admin)->get('/admin/orders?q=CS-PAID&status=processing&payment_status=paid')
             ->assertOk()
             ->assertSee($paid->order_number)
             ->assertDontSee('CS-UNPAID-FILTER');
@@ -626,7 +626,7 @@ class HomePageTest extends TestCase
             'stock_deducted_at' => now(),
         ]);
 
-        $this->actingAs($admin)->patch('/admin/orders/'.$order->id, [
+        $this->actingAsAdmin($admin)->patch('/admin/orders/'.$order->id, [
             'status' => 'shipped',
             'shipping_carrier' => 'پست پیشتاز',
             'tracking_code' => '123456789012345',
@@ -677,7 +677,7 @@ class HomePageTest extends TestCase
     {
         $admin = User::create(['name' => 'مدیر قیمت', 'mobile' => '09111111121', 'password' => 'a-secure-test-password', 'is_admin' => true]);
 
-        $this->actingAs($admin)->post('/admin/products', [
+        $this->actingAsAdmin($admin)->post('/admin/products', [
             'name' => 'محصول قیمت‌گذاری',
             'slug' => 'price-validation-product',
             'price' => 150000,
@@ -703,7 +703,7 @@ class HomePageTest extends TestCase
         $admin = User::create(['name' => 'مدیر موجودی', 'mobile' => '09111111122', 'password' => 'a-secure-test-password', 'is_admin' => true]);
         $product = Product::create(['name' => 'محصول انبار', 'slug' => 'inventory-item', 'price' => 100000, 'stock' => 5, 'is_active' => true]);
 
-        $this->actingAs($admin)->put('/admin/products/'.$product->id, [
+        $this->actingAsAdmin($admin)->put('/admin/products/'.$product->id, [
             'name' => $product->name,
             'slug' => $product->slug,
             'price' => $product->price,
@@ -729,7 +729,7 @@ class HomePageTest extends TestCase
     public function test_paid_order_with_one_insufficient_item_does_not_deduct_any_other_item(): void
     {
         $admin = User::create(['name' => 'مدیر تست اتمیک', 'mobile' => '09111111201', 'password' => 'a-secure-test-password', 'is_admin' => true]);
-        $this->actingAs($admin);
+        $this->actingAsAdmin($admin);
         $available = Product::create(['name' => 'محصول موجود', 'slug' => 'available-item-atomic', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
         $short = Product::create(['name' => 'محصول کمبود', 'slug' => 'short-item-atomic', 'price' => 70000, 'stock' => 1, 'is_active' => true]);
         $order = Order::create([
@@ -757,7 +757,7 @@ class HomePageTest extends TestCase
     public function test_duplicate_order_lines_are_aggregated_before_stock_deduction(): void
     {
         $admin = User::create(['name' => 'مدیر تست چندردیفه', 'mobile' => '09111111202', 'password' => 'a-secure-test-password', 'is_admin' => true]);
-        $this->actingAs($admin);
+        $this->actingAsAdmin($admin);
         $product = Product::create(['name' => 'محصول چندردیفه', 'slug' => 'duplicate-lines-item', 'price' => 50000, 'stock' => 5, 'is_active' => true]);
         $order = Order::create([
             'order_number' => 'CS-DUPLICATE-LINES-01',
@@ -795,7 +795,7 @@ class HomePageTest extends TestCase
         Product::create(['name' => 'موجودی کافی', 'slug' => 'healthy-stock-product', 'price' => 100000, 'stock' => 12, 'is_active' => true]);
         Product::create(['name' => 'ناموجود انبار', 'slug' => 'empty-stock-product', 'price' => 100000, 'stock' => 0, 'is_active' => true]);
 
-        $this->actingAs($admin)->get('/admin/products?stock_status=low')
+        $this->actingAsAdmin($admin)->get('/admin/products?stock_status=low')
             ->assertOk()
             ->assertSee('موجودی کم')
             ->assertDontSee('موجودی کافی')
@@ -810,7 +810,7 @@ class HomePageTest extends TestCase
         Order::create(['order_number' => 'CS-REVENUE-01', 'customer_name' => 'مشتری پرداخت‌شده', 'mobile' => '09123456789', 'shipping_address' => 'تهران، نشانی نمونه', 'subtotal' => 250000, 'shipping_amount' => 0, 'total' => 250000, 'status' => 'processing', 'payment_status' => 'paid']);
         Order::create(['order_number' => 'CS-REVENUE-02', 'customer_name' => 'مشتری پرداخت‌نشده', 'mobile' => '09123456780', 'shipping_address' => 'تهران، نشانی نمونه', 'subtotal' => 90000, 'shipping_amount' => 0, 'total' => 90000, 'status' => 'pending', 'payment_status' => 'unpaid']);
 
-        $this->actingAs($admin)->get('/admin')
+        $this->actingAsAdmin($admin)->get('/admin')
             ->assertOk()
             ->assertSee('250,000')
             ->assertSee('سفارش‌های پرداخت‌نشده');
@@ -1001,7 +1001,7 @@ class HomePageTest extends TestCase
         ]);
         $payload = ['refund_ref_id' => 'REF-778899', 'refund_note' => 'بازپرداخت در پنل زرین‌پال انجام شد.'];
 
-        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/refund', $payload)
+        $this->actingAsAdmin($admin)->post('/admin/orders/'.$order->id.'/refund', $payload)
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('orders', [
             'id' => $order->id, 'payment_status' => 'refunded', 'status' => 'cancelled',
@@ -1021,7 +1021,7 @@ class HomePageTest extends TestCase
             'shipping_address' => 'تهران، نشانی تست', 'subtotal' => 90000, 'shipping_amount' => 0, 'total' => 90000,
             'status' => 'pending', 'payment_status' => 'unpaid',
         ]);
-        $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/refund', [
+        $this->actingAsAdmin($admin)->post('/admin/orders/'.$order->id.'/refund', [
             'refund_ref_id' => 'REF-INVALID', 'refund_note' => 'نباید قابل ثبت باشد.',
         ])->assertSessionHasErrors('refund');
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'payment_status' => 'unpaid', 'status' => 'pending']);
@@ -1384,7 +1384,7 @@ class HomePageTest extends TestCase
             'payment_status' => 'unpaid',
         ]);
 
-        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+        $this->actingAsAdmin($admin)->patch(route('admin.orders.update', $order), [
             'status' => 'processing',
         ])->assertSessionHasErrors('status');
 
@@ -1416,7 +1416,7 @@ class HomePageTest extends TestCase
             'stock_deducted_at' => now(),
         ]);
 
-        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+        $this->actingAsAdmin($admin)->patch(route('admin.orders.update', $order), [
             'status' => 'cancelled',
         ])->assertSessionHasErrors('status');
 
@@ -1513,7 +1513,7 @@ class HomePageTest extends TestCase
             'payment_status' => 'unpaid',
         ]);
 
-        $this->actingAs($admin)->get(route('admin.dashboard'))
+        $this->actingAsAdmin($admin)->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee(route('admin.orders.show', $order), false)
             ->assertSee('CS-DASHBOARD-LINK-01')
@@ -1540,7 +1540,7 @@ class HomePageTest extends TestCase
             'payment_status' => 'paid',
         ]);
 
-        $this->actingAs($admin)->get(route('admin.orders'))
+        $this->actingAsAdmin($admin)->get(route('admin.orders'))
             ->assertOk()
             ->assertSee('پرداخت‌شده')
             ->assertSee('مشکل موجودی')
@@ -1665,7 +1665,7 @@ class HomePageTest extends TestCase
                 'payment_status' => $data['payment'],
             ]);
 
-            $response = $this->actingAs($admin)->get(route('admin.orders.show', $order))->assertOk();
+            $response = $this->actingAsAdmin($admin)->get(route('admin.orders.show', $order))->assertOk();
             $response->assertDontSee('name="status"', false)->assertDontSee('ذخیره وضعیت');
 
             if ($index === 0) {
@@ -1699,7 +1699,7 @@ class HomePageTest extends TestCase
             'stock_deducted_at' => now(),
         ]);
 
-        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+        $this->actingAsAdmin($admin)->patch(route('admin.orders.update', $order), [
             'status' => 'delivered',
         ])->assertSessionHasErrors('status');
 
@@ -1730,7 +1730,7 @@ class HomePageTest extends TestCase
             'stock_deducted_at' => now(),
         ]);
 
-        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+        $this->actingAsAdmin($admin)->patch(route('admin.orders.update', $order), [
             'status' => 'shipped',
             'shipping_carrier' => 'پست',
             'tracking_code' => 'TEST-TRACK-123',
