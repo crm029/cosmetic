@@ -1719,4 +1719,36 @@ class HomePageTest extends TestCase
         ]);
     }
 
+    public function test_customer_order_tracking_shows_item_and_shipping_price_breakdown(): void
+    {
+        $order = Order::create([
+            'order_number' => 'CS-TRACK-BREAKDOWN-01',
+            'customer_name' => 'مشتری جزئیات مبلغ',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 300000,
+            'shipping_amount' => 25000,
+            'total' => 325000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_name' => 'کرم آبرسان تست',
+            'unit_price' => 150000,
+            'quantity' => 2,
+            'line_total' => 300000,
+        ]);
+
+        $this->post(route('orders.track.lookup'), [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertOk()
+            ->assertSee('جمع کالاها')
+            ->assertSee('هزینه ارسال')
+            ->assertSee('325,000')
+            ->assertSee('کرم آبرسان تست')
+            ->assertSee('300,000');
+    }
+
 }
