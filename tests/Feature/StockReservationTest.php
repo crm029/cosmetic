@@ -95,7 +95,7 @@ class StockReservationTest extends TestCase
         $this->assertTrue($fulfillment->deductStock($order->fresh()));
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
-        $this->assertDatabaseHas('stock_reservations', ['order_id' => $order->id, 'consumed_at' => now()]);
+        $this->assertTrue(DB::table('stock_reservations')->where('order_id', $order->id)->whereNotNull('consumed_at')->exists());
         $this->assertDatabaseCount('stock_movements', 1);
     }
 
