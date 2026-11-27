@@ -24,7 +24,8 @@ class SecurityHardeningTest extends TestCase
     public function test_admin_login_is_rate_limited_per_mobile_and_ip(): void
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->post('/admin/login', [
+            $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.($attempt + 1)])
+                ->post('/admin/login', [
                 'mobile' => '09120000000',
                 'password' => 'incorrect-password',
             ])->assertSessionHasErrors();
@@ -57,6 +58,7 @@ class SecurityHardeningTest extends TestCase
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $this->withSession(['customer_otp_mobile' => '09120000001'])
+                ->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.($attempt + 1)])
                 ->post('/account/verify', [
                     'mobile' => '09120000001',
                     'code' => '123456',
@@ -68,6 +70,20 @@ class SecurityHardeningTest extends TestCase
                 'mobile' => '09120000001',
                 'code' => '123456',
             ])->assertTooManyRequests();
+    }
+
+
+    public function test_customer_otp_send_is_rate_limited_per_mobile_even_when_ip_changes(): void
+    {
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.'.($attempt + 1)])
+                ->post('/account/send-code', ['mobile' => '09120000002'])
+                ->assertSessionHasErrors();
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])
+            ->post('/account/send-code', ['mobile' => '09120000002'])
+            ->assertTooManyRequests();
     }
 
     public function test_guest_cannot_access_admin_dashboard(): void
