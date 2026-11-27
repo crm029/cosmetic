@@ -225,8 +225,9 @@ class AdminController extends Controller {
     if($version!==2||$length!==$file->getSize()||substr($header,16,4)!=='JSON'||$chunkLength<2||$chunkLength%4!==0||20+$chunkLength>$file->getSize()){$fail('ساختار فایل GLB معتبر نیست.');return;}
     $handle=fopen($path,'rb');fseek($handle,20);$json=fread($handle,$chunkLength);$document=json_decode($json,true);
     if(!is_array($document)||($document['asset']['version']??null)!=='2.0'){$fail('مدل سه‌بعدی باید با استاندارد glTF 2.0 سازگار باشد.');fclose($handle);return;}
+    if((isset($document['buffers'])&&!is_array($document['buffers']))||(isset($document['images'])&&!is_array($document['images']))){$fail('ساختار منابع مدل سه‌بعدی معتبر نیست.');fclose($handle);return;}
     foreach(array_merge($document['buffers']??[],$document['images']??[]) as $resource){
-     if(isset($resource['uri'])&&!str_starts_with($resource['uri'],'data:')){$fail('مدل سه‌بعدی نباید به فایل‌های خارجی وابسته باشد.');fclose($handle);return;}
+     if(!is_array($resource)||(isset($resource['uri'])&&!str_starts_with($resource['uri'],'data:'))){$fail('مدل سه‌بعدی نباید به فایل‌های خارجی وابسته باشد.');fclose($handle);return;}
     }
     $hasBinaryChunk=false;$binaryLength=0;
     if(20+$chunkLength<$file->getSize()){
@@ -238,7 +239,7 @@ class AdminController extends Controller {
     }
     fclose($handle);
     $buffer=$document['buffers'][0]??null;
-    if($buffer&&empty($buffer['uri'])&&(!$hasBinaryChunk||(int)($buffer['byteLength']??0)>$binaryLength||$binaryLength-(int)$buffer['byteLength']>3))$fail('داده هندسی مدل GLB ناقص است.');
+    if($buffer&&empty($buffer['uri'])&&(!isset($buffer['byteLength'])||!$hasBinaryChunk||(int)$buffer['byteLength']>$binaryLength||$binaryLength-(int)$buffer['byteLength']>3))$fail('داده هندسی مدل GLB ناقص است.');
     if(!$buffer&&$hasBinaryChunk)$fail('ساختار بخش داده مدل GLB با فایل سازگار نیست.');
    }],
    'is_active'=>['nullable','boolean'],'is_featured'=>['nullable','boolean'],
