@@ -14,6 +14,7 @@ class AdminAuthController extends Controller {
   return redirect()->route(Auth::user()->totp_enabled_at?'admin.mfa.verify':'admin.mfa.setup');
  }
  public function logout(Request $request) {
+  abort_unless(Auth::user() && Auth::user()->is_admin, 403);
   Auth::logout();$request->session()->invalidate();$request->session()->regenerateToken();
   return redirect()->route('admin.login');
  }
