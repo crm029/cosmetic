@@ -82,6 +82,12 @@ class PaymentOrderLifecycleTest extends TestCase
         ]);
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
         $this->assertDatabaseCount('stock_movements', 1);
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'from_status' => 'pending',
+            'to_status' => 'processing',
+            'actor_type' => 'payment_gateway',
+        ]);
 
         $this->get($url)->assertRedirect(route('home'));
 
