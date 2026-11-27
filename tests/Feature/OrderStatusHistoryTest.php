@@ -44,7 +44,7 @@ class OrderStatusHistoryTest extends TestCase
         $admin = $this->admin();
         $order = $this->order('CS-HISTORY-ADMIN-01');
 
-        $this->actingAs($admin)->patch(route('admin.orders.update', $order), [
+        $this->actingAsAdmin($admin)->patch(route('admin.orders.update', $order), [
             'status' => 'shipped',
             'shipping_carrier' => 'پست',
             'tracking_code' => 'HISTORY-TRACK-01',
@@ -65,7 +65,7 @@ class OrderStatusHistoryTest extends TestCase
         $order = $this->order('CS-HISTORY-REFUND-01', 'refund_required', 'paid');
         $order->update(['stock_deducted_at' => null]);
 
-        $this->actingAs($admin)->post(route('admin.orders.refund', $order), [
+        $this->actingAsAdmin($admin)->post(route('admin.orders.refund', $order), [
             'refund_ref_id' => 'REFUND-TRACK-01',
             'refund_note' => 'بازپرداخت در پنل درگاه انجام شد.',
         ])->assertSessionHasNoErrors();
@@ -106,7 +106,7 @@ class OrderStatusHistoryTest extends TestCase
             'note' => 'مرسوله تحویل شرکت پست شد.',
         ]);
 
-        $this->actingAs($admin)->get(route('admin.orders.show', $order))
+        $this->actingAsAdmin($admin)->get(route('admin.orders.show', $order))
             ->assertOk()
             ->assertSee('تاریخچه تغییرات سفارش')
             ->assertSee('ارسال‌شده')
