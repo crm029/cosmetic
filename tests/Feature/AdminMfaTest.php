@@ -62,6 +62,66 @@ class AdminMfaTest extends TestCase
             ->assertSessionHasErrors('code');
     }
 
+    public function test_admin_password_login_cannot_skip_totp_enrollment(): void
+    {
+        $admin = $this->admin();
+
+        $this->post('/admin/login', [
+            'mobile' => $admin->mobile,
+            'password' => 'A-very-strong-test-password!',
+        ])->assertRedirect(route('admin.mfa.setup'));
+
+        $this->get('/admin')->assertRedirect(route('admin.mfa.setup'));
+    }
+
+    public function test_customer_cannot_view_another_phone_number_order_after_login(): void
+    {
+        $customer = User::create([
+            'name' => 'مشتری مجاز',
+            'mobile' => '09123334444',
+            'password' => Hash::make('customer-password'),
+            'is_admin' => false,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-PRIVATE-ORDER-01',
+            'customer_name' => 'مشتری دیگر',
+            'mobile' => '09125556666',
+            'shipping_address' => 'نشانی محرمانه',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+        ]);
+
+        $this->actingAs($customer)->post('/order/track', [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertNotFound();
+    }
+
+    public function test_customer_cannot_retry_payment_for_another_mobile_order(): void
+    {
+        $customer = User::create([
+            'name' => 'مشتری مجاز',
+            'mobile' => '09123334445',
+            'password' => Hash::make('customer-password'),
+            'is_admin' => false,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-PRIVATE-PAY-01',
+            'customer_name' => 'مشتری دیگر',
+            'mobile' => '09125556667',
+            'shipping_address' => 'نشانی محرمانه',
+            'subtotal' => 100000,
+            'shipping_amount' => 0,
+            'total' => 100000,
+        ]);
+
+        $this->actingAs($customer)->post(route('orders.pay.retry', $order), [
+            'order_number' => $order->order_number,
+            'mobile' => $order->mobile,
+        ])->assertNotFound();
+    }
+
     public function test_customer_order_tracking_requires_authenticated_customer_session(): void
     {
         $this->post('/order/track', ['order_number' => 'CS-EXAMPLE', 'mobile' => '09121112222'])
