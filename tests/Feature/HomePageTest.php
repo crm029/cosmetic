@@ -1393,4 +1393,69 @@ class HomePageTest extends TestCase
     }
 
 
+    public function test_paid_order_stock_failure_does_not_partially_deduct_other_products(): void
+    {
+        $available = Product::create([
+            'name' => 'محصول دارای موجودی',
+            'slug' => 'atomic-stock-available',
+            'price' => 50000,
+            'stock' => 8,
+            'is_active' => true,
+        ]);
+        $shortage = Product::create([
+            'name' => 'محصول با موجودی ناکافی',
+            'slug' => 'atomic-stock-shortage',
+            'price' => 70000,
+            'stock' => 1,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-STOCK-ATOMIC-01',
+            'customer_name' => 'مشتری آزمون اتمیک',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 190000,
+            'shipping_amount' => 0,
+            'total' => 190000,
+            'status' => 'processing',
+            'payment_status' => 'paid',
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $available->id,
+            'product_name' => $available->name,
+            'unit_price' => 50000,
+            'quantity' => 3,
+            'line_total' => 150000,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $shortage->id,
+            'product_name' => $shortage->name,
+            'unit_price' => 70000,
+            'quantity' => 1,
+            'line_total' => 70000,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $shortage->id,
+            'product_name' => $shortage->name,
+            'unit_price' => 70000,
+            'quantity' => 1,
+            'line_total' => 70000,
+        ]);
+
+        $this->assertFalse(app(\\App\\Services\\OrderFulfillmentService::class)->deductStock($order));
+
+        $this->assertDatabaseHas('products', ['id' => $available->id, 'stock' => 8]);
+        $this->assertDatabaseHas('products', ['id' => $shortage->id, 'stock' => 1]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'paid_stock_issue',
+            'stock_deducted_at' => null,
+        ]);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+
 }
