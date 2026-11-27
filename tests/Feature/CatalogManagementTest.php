@@ -94,4 +94,51 @@ class CatalogManagementTest extends TestCase
         $this->assertNotEmpty($product->model_3d);
         Storage::disk('public')->assertExists($product->model_3d);
     }
+
+    public function test_category_image_replacement_keeps_new_file_and_removes_old_file(): void
+    {
+        Storage::fake('public');
+        $admin = $this->admin();
+        $oldImage = 'categories/old-category.jpg';
+        Storage::disk('public')->put($oldImage, 'old-image');
+        $category = Category::create([
+            'name' => 'دسته قبلی',
+            'slug' => 'category-image-replacement',
+            'image' => $oldImage,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+            'name' => 'دسته جدید',
+            'slug' => $category->slug,
+            'is_active' => true,
+            'image' => UploadedFile::fake()->image('new-category.jpg'),
+        ])->assertRedirect(route('admin.categories'))->assertSessionHasNoErrors();
+
+        $updated = $category->fresh();
+        $this->assertSame('دسته جدید', $updated->name);
+        $this->assertNotSame($oldImage, $updated->image);
+        Storage::disk('public')->assertMissing($oldImage);
+        Storage::disk('public')->assertExists($updated->image);
+    }
+
+    public function test_product_detail_exposes_uploaded_glb_to_the_three_dimensional_viewer(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول سه‌بعدی',
+            'slug' => 'three-dimensional-product-view',
+            'price' => 180000,
+            'stock' => 2,
+            'model_3d' => 'models/sample.glb',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('product-3d-viewer', false)
+            ->assertSee(asset('storage/models/sample.glb'), false)
+            ->assertSee('نمایش سه‌بعدی محصول', false);
+    }
+
+
 }
