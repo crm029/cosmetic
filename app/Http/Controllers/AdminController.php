@@ -109,7 +109,7 @@ class AdminController extends Controller {
    if($request->hasFile('image')){$imagePath=$request->file('image')->store('categories','public');$data['image']=$imagePath;}
    $data['is_active']=$request->boolean('is_active');
    Category::create($data);
-  } catch(\\Throwable $e) {
+  } catch(\Throwable $e) {
    if($imagePath)Storage::disk('public')->delete($imagePath);
    throw $e;
   }
@@ -124,7 +124,7 @@ class AdminController extends Controller {
    if($request->hasFile('image')){$newImage=$request->file('image')->store('categories','public');$data['image']=$newImage;}
    $data['is_active']=$request->boolean('is_active');
    $category->update($data);
-  } catch(\\Throwable $e) {
+  } catch(\Throwable $e) {
    if($newImage)Storage::disk('public')->delete($newImage);
    throw $e;
   }
