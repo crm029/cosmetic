@@ -10,6 +10,8 @@ use App\Services\OrderFulfillmentService;
 use App\Services\StockReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use RuntimeException;
 use Tests\TestCase;
 
