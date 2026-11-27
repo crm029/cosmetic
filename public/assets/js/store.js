@@ -3,8 +3,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function createRenderer(container,interactive=false){
- const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
- renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ if(!window.WebGLRenderingContext)throw new Error('WebGL is unavailable');
+ const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:'+(interactive?'auto':'none')+';z-index:1';
  container.appendChild(renderer.domElement);return renderer;
 }
@@ -60,10 +61,12 @@ function mountProductModel(container){
   controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.06;controls.enablePan=false;controls.minDistance=2.2;controls.maxDistance=10;controls.autoRotate=!reduced;controls.autoRotateSpeed=.7;
   const render=()=>renderer.render(scene,camera);controls.addEventListener('change',render);
   const resize=()=>{const w=container.clientWidth,h=container.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);render()};observer=new ResizeObserver(resize);observer.observe(container);
+  container.dataset.modelState='loading';
   new GLTFLoader().load(container.dataset.modelUrl,(gltf)=>{
+   container.dataset.modelState='loaded';
    const fallback=container.querySelector('.product-3d-fallback');if(fallback)fallback.hidden=true;const model=gltf.scene;const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const center=bounds.getCenter(new THREE.Vector3());const factor=3.3/Math.max(size.x,size.y,size.z,1);
    model.scale.setScalar(factor);model.position.sub(center.multiplyScalar(factor));scene.add(model);render();
-  },undefined,()=>{if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}const fallback=container.querySelector('.product-3d-fallback');if(fallback)fallback.hidden=false;container.setAttribute('aria-label','نمایش سه‌بعدی در دسترس نیست؛ تصویر جایگزین محصول نمایش داده شده است.')});
+  },(progress)=>{if(progress.total>0)container.dataset.loadProgress=String(Math.round(progress.loaded/progress.total*100));},()=>{container.dataset.modelState='fallback';if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}const fallback=container.querySelector('.product-3d-fallback');if(fallback)fallback.hidden=false;container.setAttribute('aria-label','نمایش سه‌بعدی در دسترس نیست؛ تصویر جایگزین محصول نمایش داده شده است.')});
   const animate=()=>{if(document.hidden){frame=null;return;}frame=requestAnimationFrame(animate);controls.update();render()};const start=()=>{if(!reduced&&!frame&&!document.hidden)animate()};visibilityHandler=()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=null}else start()};document.addEventListener('visibilitychange',visibilityHandler);if(!reduced)start();else render();
  }catch(error){if(frame)cancelAnimationFrame(frame);if(observer)observer.disconnect();if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);if(controls)controls.dispose();if(renderer){renderer.dispose();renderer.domElement.remove()}const fallback=container.querySelector('.product-3d-fallback');if(fallback)fallback.hidden=false;container.setAttribute('aria-label','نمایش سه‌بعدی در دسترس نیست؛ تصویر جایگزین محصول نمایش داده شده است.')}
 }
