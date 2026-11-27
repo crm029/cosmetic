@@ -115,6 +115,7 @@
 | database/migrations/2026_11_27_000004_create_reviews_and_phone_verifications.php | جدول نظرات محصولات و کدهای تأیید شماره موبایل. |
 | database/migrations/2026_11_27_000005_create_loyalty_point_transactions.php | امتیاز فعلی کاربران و دفتر تراکنش امتیاز. |
 | database/migrations/2026_11_27_000006_add_delivery_sms_tracking_to_orders.php | زمان و قفل ارسال پیامک تحویل سفارش. |
+| database/seeders/DatabaseSeeder.php | ساخت تنظیمات پایه فروشگاه و دسته‌بندی‌های اولیه هنگام seed؛ حساب مدیر نمی‌سازد. |
 
 ## قالب‌ها؛ ظاهر صفحات سایت
 
