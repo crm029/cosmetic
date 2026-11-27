@@ -19,7 +19,8 @@ class CheckoutController extends Controller {
   foreach($products as $p){
    $quantity=(int)($cart[$p->id]??0);
    if($quantity<1)continue;
-   if($quantity>$p->stock)return redirect()->route('cart.index')->withErrors(['cart'=>'موجودی '.$p->name.' برای تعداد انتخاب‌شده کافی نیست.']);
+   if($reserved=(int)DB::table('stock_reservations')->where('product_id',$p->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
+   if($quantity>$p->stock-$reserved)return redirect()->route('cart.index')->withErrors(['cart'=>'موجودی آزاد '.$p->name.' برای تعداد انتخاب‌شده کافی نیست.']);
    $validCart[$p->id]=$quantity;$subtotal+=$p->price*$quantity;
   }
   if(count($validCart)!==count($cart))$request->session()->put('cart',$validCart);
@@ -29,20 +30,21 @@ class CheckoutController extends Controller {
   $shipping=($threshold>0&&$subtotal>=$threshold)?0:$fee;$total=$subtotal+$shipping;
   return view('checkout.index',compact('products','cart','subtotal','shipping','total'));
  }
- public function store(Request $request,ZarinpalService $gateway) {
+ public function store(Request $request,ZarinpalService $gateway,StockReservationService $reservations) {
   $data=$request->validate(['customer_name'=>['required','string','max:120'],'mobile'=>['required','regex:/^09[0-9]{9}$/'],'email'=>['nullable','email','max:190'],'shipping_address'=>['required','string','min:10','max:1500'],'notes'=>['nullable','string','max:1000']]);
   $cart=$request->session()->get('cart',[]);if(!$cart)return redirect()->route('cart.index');
   $order=null;
   try {
-   $order=DB::transaction(function()use($cart,$data){
-    $products=Product::whereIn('id',array_keys($cart))->where('is_active',true)->lockForUpdate()->get();
+   $order=DB::transaction(function()use($cart,$data,$reservations){
+    $products=Product::whereIn('id',array_keys($cart))->where('is_active',true)->orderBy('id')->lockForUpdate()->get();
     if($products->count()!==count($cart))throw new RuntimeException('یکی از محصولات دیگر در دسترس نیست.');
     $subtotal=0;
-    foreach($products as $p){$qty=(int)$cart[$p->id];if($qty<1||$qty>$p->stock)throw new RuntimeException('موجودی '.$p->name.' کافی نیست.');$subtotal+=$p->price*$qty;}
+    foreach($products as $p){$qty=(int)$cart[$p->id];$reserved=(int)DB::table('stock_reservations')->where('product_id',$p->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');if($qty<1||$qty>$p->stock-$reserved)throw new RuntimeException('موجودی آزاد '.$p->name.' کافی نیست.');$subtotal+=$p->price*$qty;}
     $settings=StoreSetting::current();$fee=$settings->shipping_fee_toman;$threshold=$settings->free_shipping_threshold_toman;
     $shipping=($threshold>0&&$subtotal>=$threshold)?0:$fee;$total=$subtotal+$shipping;
     $created=Order::create(['order_number'=>'CS-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),'customer_name'=>$data['customer_name'],'mobile'=>$data['mobile'],'email'=>$data['email']??null,'shipping_address'=>$data['shipping_address'],'subtotal'=>$subtotal,'shipping_amount'=>$shipping,'total'=>$total,'status'=>'pending','payment_status'=>'unpaid','notes'=>$data['notes']??null]);
     foreach($products as $p){$qty=(int)$cart[$p->id];OrderItem::create(['order_id'=>$created->id,'product_id'=>$p->id,'product_name'=>$p->name,'unit_price'=>$p->price,'quantity'=>$qty,'line_total'=>$p->price*$qty]);}
+    $reservations->reserveForOrder($created);
     return $created;
    });
    return redirect()->away($gateway->requestPayment($order));
