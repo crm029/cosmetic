@@ -1532,7 +1532,7 @@ class HomePageTest extends TestCase
             'status' => 'pending',
             'payment_status' => 'unpaid',
         ]);
-        \\Illuminate\\Support\\Facades\\DB::table('stock_reservations')->insert([
+        \Illuminate\Support\Facades\DB::table('stock_reservations')->insert([
             'order_id' => $order->id,
             'product_id' => $product->id,
             'quantity' => 3,
@@ -1574,7 +1574,7 @@ class HomePageTest extends TestCase
             'status' => 'pending',
             'payment_status' => 'unpaid',
         ]);
-        \\Illuminate\\Support\\Facades\\DB::table('stock_reservations')->insert([
+        \Illuminate\Support\Facades\DB::table('stock_reservations')->insert([
             'order_id' => $order->id,
             'product_id' => $reserved->id,
             'quantity' => 2,
