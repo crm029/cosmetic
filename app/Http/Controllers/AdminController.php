@@ -162,7 +162,7 @@ class AdminController extends Controller {
  public function customers(Request $request): View {
   $filters=$request->validate(['q'=>['nullable','string','max:100']]);
   $customers=Order::query()
-   ->selectRaw("mobile, MAX(customer_name) as customer_name, MAX(email) as email, COUNT(*) as orders_count, SUM(CASE WHEN payment_status = 'paid' THEN total ELSE 0 END) as paid_total, MAX(created_at) as last_order_at")
+   ->selectRaw("orders.mobile, (SELECT latest.customer_name FROM orders as latest WHERE latest.mobile = orders.mobile ORDER BY latest.created_at DESC, latest.id DESC LIMIT 1) as customer_name, (SELECT latest.email FROM orders as latest WHERE latest.mobile = orders.mobile ORDER BY latest.created_at DESC, latest.id DESC LIMIT 1) as email, COUNT(*) as orders_count, SUM(CASE WHEN payment_status = 'paid' THEN total ELSE 0 END) as paid_total, MAX(created_at) as last_order_at")
    ->when(!empty($filters['q']),function($query)use($filters){$term='%'.$filters['q'].'%';$query->where(function($search)use($term){$search->where('customer_name','like',$term)->orWhere('mobile','like',$term)->orWhere('email','like',$term);});})
    ->groupBy('mobile')->orderByDesc('last_order_at')->paginate(25)->withQueryString();
   return view('admin.customers.index',compact('customers'));
@@ -170,7 +170,7 @@ class AdminController extends Controller {
  public function showCustomer(string $mobile): View {
   abort_unless(preg_match('/^[0-9+ -]{7,20}$/',$mobile)===1,404);
   $query=Order::where('mobile',$mobile);
-  $latest=$query->latest()->firstOrFail();
+  $latest=(clone $query)->latest()->firstOrFail();
   return view('admin.customers.show',[
    'mobile'=>$mobile,
    'customerName'=>$latest->customer_name,
