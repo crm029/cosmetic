@@ -42,7 +42,7 @@
             <a href="{{ route('home') }}">خانه</a>
             <a href="{{ route('shop') }}">فروشگاه</a>
             <a href="{{ route('orders.track') }}">پیگیری سفارش</a>
-            <a href="{{ route('account.index') }}">حساب من</a>
+            <a href="{{ auth()->check()&&!auth()->user()->is_admin?route('account.index'):route('customer.login') }}">حساب من</a>
             <a href="{{ route('about') }}">داستان ما</a>
             <a href="{{ route('contact.index') }}">ارتباط</a>
         </nav>
