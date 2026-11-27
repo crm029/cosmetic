@@ -37,5 +37,36 @@ default=>[],
 @foreach($statusOptions as $value=>$label)<option value="{{ $value }}" @selected($order->status===$value)>{{ $label }}</option>@endforeach
 </select></label><button class="button button-dark">ذخیره وضعیت</button></form>
 @endif
+<hr>
+<section class="order-history">
+    <h2>تاریخچه تغییرات سفارش</h2>
+    @php
+        $statusLabels = [
+            'pending' => 'در انتظار پرداخت',
+            'processing' => 'در حال آماده‌سازی',
+            'shipped' => 'ارسال‌شده',
+            'delivered' => 'تحویل‌شده',
+            'cancelled' => 'لغوشده',
+            'paid_stock_issue' => 'مشکل موجودی',
+            'refund_required' => 'نیازمند بازپرداخت',
+        ];
+        $actorLabels = ['admin' => 'مدیر فروشگاه', 'system' => 'سیستم', 'payment_gateway' => 'درگاه پرداخت'];
+    @endphp
+    @forelse($order->statusHistory as $history)
+        <article class="order-history-item">
+            <div class="order-history-marker"></div>
+            <div>
+                <strong>{{ $statusLabels[$history->to_status] ?? $history->to_status }}</strong>
+                @if($history->from_status)
+                    <span>از {{ $statusLabels[$history->from_status] ?? $history->from_status }}</span>
+                @endif
+                <p>{{ $history->note ?: 'وضعیت سفارش تغییر کرد.' }}</p>
+                <small>{{ $actorLabels[$history->actor_type] ?? $history->actor_type }}@if($history->admin) — {{ $history->admin->name }}@endif · {{ $history->created_at->format('Y/m/d H:i') }}</small>
+            </div>
+        </article>
+    @empty
+        <p>هنوز تغییری برای این سفارش ثبت نشده است.</p>
+    @endforelse
+</section>
 </div></section>
 @endsection
