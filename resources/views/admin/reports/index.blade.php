@@ -43,8 +43,8 @@
             <h2>پرفروش‌ترین محصولات</h2>
             <div class="admin-table">
                 <div class="admin-row report-product-head"><span>محصول</span><span>تعداد فروخته‌شده</span><span>فروش (تومان)</span></div>
-                @forelse($topProducts as $product)
-                    <div class="admin-row report-product-row"><span>{{ $product->product_name }}</span><span>{{ number_format($product->quantity) }}</span><span>{{ number_format($product->revenue) }}</span></div>
+                @forelse($topProducts as $topProduct)
+                    <div class="admin-row report-product-row"><span>{{ $topProduct->product_name }}</span><span>{{ number_format($topProduct->quantity) }}</span><span>{{ number_format($topProduct->revenue) }}</span></div>
                 @empty
                     <p>در این بازه فروش پرداخت‌شده‌ای ثبت نشده است.</p>
                 @endforelse
