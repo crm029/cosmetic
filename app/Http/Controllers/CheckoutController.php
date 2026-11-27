@@ -21,6 +21,7 @@ class CheckoutController extends Controller {
   foreach($products as $p){
    $quantity=(int)($cart[$p->id]??0);
    if($quantity<1)continue;
+   if($quantity>20)return redirect()->route('cart.index')->withErrors(['cart'=>'حداکثر تعداد هر محصول در سبد خرید ۲۰ عدد است.']);
    $reserved=(int)DB::table('stock_reservations')->where('product_id',$p->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
    if($quantity>$p->stock-$reserved)return redirect()->route('cart.index')->withErrors(['cart'=>'موجودی آزاد '.$p->name.' برای تعداد انتخاب‌شده کافی نیست.']);
    $validCart[$p->id]=$quantity;$subtotal+=$p->price*$quantity;
@@ -35,6 +36,8 @@ class CheckoutController extends Controller {
  public function store(Request $request,ZarinpalService $gateway,StockReservationService $reservations): RedirectResponse {
   $data=$request->validate(['customer_name'=>['required','string','max:120'],'mobile'=>['required','regex:/^09[0-9]{9}$/'],'email'=>['nullable','email','max:190'],'shipping_address'=>['required','string','min:10','max:1500'],'notes'=>['nullable','string','max:1000']]);
   $cart=$request->session()->get('cart',[]);if(!$cart)return redirect()->route('cart.index');
+  if(!is_array($cart)||count($cart)>50)return redirect()->route('cart.index')->withErrors(['cart'=>'سبد خرید معتبر نیست؛ لطفاً دوباره محصولات را انتخاب کنید.']);
+  foreach($cart as $quantity){if(!is_numeric($quantity)||(int)$quantity<1||(int)$quantity>20)return redirect()->route('cart.index')->withErrors(['cart'=>'تعداد هر محصول باید بین ۱ تا ۲۰ عدد باشد.']);}
   $order=null;
   try {
    $order=DB::transaction(function()use($cart,$data,$reservations){
@@ -44,7 +47,7 @@ class CheckoutController extends Controller {
     foreach($products as $p){
      $qty=(int)$cart[$p->id];
      $reserved=(int)DB::table('stock_reservations')->where('product_id',$p->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->sum('quantity');
-     if($qty<1||$qty>$p->stock-$reserved)throw new RuntimeException('موجودی آزاد '.$p->name.' کافی نیست.');
+     if($qty<1||$qty>20||$qty>$p->stock-$reserved)throw new RuntimeException('موجودی آزاد '.$p->name.' کافی نیست.');
      $subtotal+=$p->price*$qty;
     }
     $settings=StoreSetting::current();$fee=$settings->shipping_fee_toman;$threshold=$settings->free_shipping_threshold_toman;
