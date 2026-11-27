@@ -1445,7 +1445,7 @@ class HomePageTest extends TestCase
             'line_total' => 70000,
         ]);
 
-        $this->assertFalse(app(\\App\\Services\\OrderFulfillmentService::class)->deductStock($order));
+        $this->assertFalse(app(\App\Services\OrderFulfillmentService::class)->deductStock($order));
 
         $this->assertDatabaseHas('products', ['id' => $available->id, 'stock' => 8]);
         $this->assertDatabaseHas('products', ['id' => $shortage->id, 'stock' => 1]);
