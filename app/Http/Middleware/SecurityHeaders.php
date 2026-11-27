@@ -16,7 +16,7 @@ class SecurityHeaders {
   $response->headers->set('Referrer-Policy','strict-origin-when-cross-origin');
   $response->headers->set('Permissions-Policy','camera=(), microphone=(), geolocation=()');
   $response->headers->set('Cross-Origin-Opener-Policy','same-origin');
-  $policy="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; media-src 'self' blob:; frame-src 'none'; manifest-src 'self'";
+  $policy="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self'; media-src 'self' blob:; frame-src 'none'; manifest-src 'self'";
   if(app()->environment('production'))$policy.='; upgrade-insecure-requests';
   $response->headers->set('Content-Security-Policy',$policy);
   if($request->is('admin','admin/*','admin/login','checkout','cart','coupon','account','account/*','order/track','order/*/pay','payment/callback')){
