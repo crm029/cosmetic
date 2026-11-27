@@ -50,7 +50,7 @@ class CustomerAccountAndReviewTest extends TestCase {
   $this->assertSame('pending',$review->status);
   $this->actingAs($user)->post(route('products.reviews.store',$product),['rating'=>4,'body'=>'نظر دوم برای محصول.'])->assertSessionHasErrors('review');
   $admin=User::create(['name'=>'مدیر تست','mobile'=>'09123456789','password'=>'a-secure-test-password','is_admin'=>true]);
-  $this->actingAs($admin)->patch(route('admin.reviews.moderate',$review),['status'=>'approved'])->assertSessionHasNoErrors();
+  $this->actingAsAdmin($admin)->patch(route('admin.reviews.moderate',$review),['status'=>'approved'])->assertSessionHasNoErrors();
   $this->assertDatabaseHas('product_reviews',['id'=>$review->id,'status'=>'approved']);
  }
  public function test_unverified_customer_cannot_review_and_reviews_are_not_public_before_approval(): void {
