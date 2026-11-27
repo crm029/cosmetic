@@ -39,7 +39,8 @@ Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/account/login',[CustomerAuthController::class,'show'])->name('customer.login');
 Route::post('/account/send-code',[CustomerAuthController::class,'sendCode'])->middleware('throttle:3,10')->name('customer.send-code');
 Route::post('/account/verify',[CustomerAuthController::class,'verify'])->middleware('throttle:5,10')->name('customer.verify');
-Route::middleware('auth')->group(function(){ Route::get('/account',[CustomerAuthController::class,'index'])->name('account.index'); Route::post('/account/logout',[CustomerAuthController::class,'logout'])->name('account.logout'); Route::post('/product/{product}/reviews',[ProductReviewController::class,'store'])->middleware('throttle:5,10')->name('products.reviews.store'); });
+Route::get('/account',[CustomerAuthController::class,'index'])->name('account.index');
+Route::middleware('auth')->group(function(){ Route::post('/account/logout',[CustomerAuthController::class,'logout'])->name('account.logout'); Route::post('/product/{product}/reviews',[ProductReviewController::class,'store'])->middleware('throttle:5,10')->name('products.reviews.store'); });
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:5,1')->name('admin.login.submit');
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
