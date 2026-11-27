@@ -20,8 +20,9 @@ class OrderTrackingController extends Controller {
   if(!hash_equals($order->order_number,strtoupper(trim($data['order_number'])))||!hash_equals($order->mobile,$data['mobile']))abort(404);
   if(in_array($order->payment_status,['paid','refunded'],true)||in_array($order->status,['cancelled','refund_required','paid_stock_issue'],true))return back()->withErrors(['payment'=>'این سفارش امکان پرداخت مجدد ندارد.']);
   try {
-   DB::transaction(function()use($order,$reservations){$locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();if(in_array($locked->payment_status,['paid','refunded'],true)||in_array($locked->status,['cancelled','refund_required','paid_stock_issue'],true))throw new \RuntimeException('این سفارش امکان پرداخت مجدد ندارد.');if($locked->payment_authority)throw new \RuntimeException('لینک پرداخت قبلی هنوز فعال است؛ ابتدا نتیجه همان پرداخت را پیگیری کنید.');$reservations->reserveForOrder($locked);});
-   return redirect()->away($gateway->requestPayment($order->fresh()));
+   DB::transaction(function()use($order,$reservations){$locked=Order::whereKey($order->id)->lockForUpdate()->firstOrFail();if(in_array($locked->payment_status,['paid','refunded'],true)||in_array($locked->status,['cancelled','refund_required','paid_stock_issue'],true))throw new \RuntimeException('این سفارش امکان پرداخت مجدد ندارد.');$reservations->reserveForOrder($locked);});
+   $fresh=$order->fresh();
+   return redirect()->away($fresh->payment_authority ? $gateway->startPayUrl($fresh) : $gateway->requestPayment($fresh));
   } catch(\Throwable $e) {
    report($e);
    return back()->withErrors(['payment'=>$e instanceof \RuntimeException?$e->getMessage():'ساخت لینک پرداخت ناموفق بود. کمی بعد دوباره تلاش کنید.']);
