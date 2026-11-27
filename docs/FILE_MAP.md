@@ -37,7 +37,8 @@
 
 | مسیر | کاربرد |
 |---|---|
-| app/Http/Middleware/EnsureAdmin.php | جلوگیری از دسترسی مشتری یا مهمان به پنل مدیریت. |
+| app/Http/Middleware/EnsureAdmin.php | جلوگیری از دسترسی مشتری یا مهمان به پنل مدیریت و اجبار تأیید دومرحله‌ای مدیر. |
+| app/Http/Middleware/EnsureCustomer.php | محدود کردن عملیات حساس پیگیری سفارش به حساب مشتری تأییدشده با OTP. |
 | app/Http/Middleware/SecurityHeaders.php | هدرهای امنیتی، CSP nonce، HSTS در HTTPS و جلوگیری از cache صفحات خصوصی. |
 | app/Http/Controllers/Controller.php | کلاس پایه کنترلرها. |
 
@@ -45,7 +46,8 @@
 
 | مسیر | کاربرد |
 |---|---|
-| app/Http/Controllers/AdminAuthController.php | ورود و خروج مدیر. |
+| app/Http/Controllers/AdminAuthController.php | ورود و خروج مدیر؛ پس از رمز عبور، ورود دومرحله‌ای اجباری است. |
+| app/Http/Controllers/AdminMfaController.php | ثبت اولیه کلید TOTP، فعال‌سازی و بررسی کد دومرحله‌ای مدیر. |
 | app/Http/Controllers/AdminController.php | داشبورد و عملیات مدیر: کالا، دسته، سفارش، مشتری، گزارش، تنظیمات، پیام‌ها، کوپن و انبار. |
 | app/Http/Controllers/CartController.php | افزودن، حذف و تغییر تعداد کالا در سبد خرید. |
 | app/Http/Controllers/CheckoutController.php | اعتبارسنجی نهایی سبد، محاسبه مبلغ، ساخت سفارش و آغاز پرداخت. |
@@ -65,6 +67,7 @@
 | app/Services/OrderFulfillmentService.php | تطبیق سفارش پرداخت‌شده، کسر اتمیک موجودی، ثبت گردش انبار و امتیاز وفاداری. |
 | app/Services/SmsService.php | ارسال پیامک پرداخت، ارسال مرسوله و تحویل با جلوگیری از ارسال تکراری. |
 | app/Services/StockReservationService.php | رزرو، آزادسازی و پاک‌سازی رزروهای منقضی موجودی. |
+| app/Services/TotpService.php | تولید کلید محرمانه و محاسبه/بررسی کدهای یک‌بارمصرف TOTP مدیر. |
 | app/Services/ZarinpalService.php | درخواست پرداخت، ساخت لینک پرداخت، verify و inquiry زرین‌پال. |
 
 ## مدل‌ها؛ ارتباط برنامه با جدول‌ها
@@ -83,7 +86,7 @@
 | app/Models/ProductReview.php | نظر و امتیاز مشتری برای محصول. |
 | app/Models/StockMovement.php | سوابق ورود، اصلاح و خروج موجودی. |
 | app/Models/StoreSetting.php | نام فروشگاه، لوگو، رنگ‌ها، نشانی و هزینه ارسال. |
-| app/Models/User.php | حساب مدیر و مشتری و امتیاز وفاداری. |
+| app/Models/User.php | حساب مدیر و مشتری، امتیاز وفاداری و کلید رمزنگاری‌شده MFA مدیر. |
 | app/Providers/AppServiceProvider.php | تنظیمات سراسری، rate limitهای سفارشی و داده مشترک قالب‌ها. |
 
 ## مهاجرت‌های پایگاه داده
@@ -115,6 +118,7 @@
 | database/migrations/2026_11_27_000004_create_reviews_and_phone_verifications.php | جدول نظرات محصولات و کدهای تأیید شماره موبایل. |
 | database/migrations/2026_11_27_000005_create_loyalty_point_transactions.php | امتیاز فعلی کاربران و دفتر تراکنش امتیاز. |
 | database/migrations/2026_11_27_000006_add_delivery_sms_tracking_to_orders.php | زمان و قفل ارسال پیامک تحویل سفارش. |
+| database/migrations/2026_11_27_000007_add_totp_fields_to_users.php | فیلدهای فعال‌سازی، کلید رمزنگاری‌شده و جلوگیری از استفاده مجدد کد TOTP مدیر. |
 | database/seeders/DatabaseSeeder.php | ساخت تنظیمات پایه فروشگاه و دسته‌بندی‌های اولیه هنگام seed؛ حساب مدیر نمی‌سازد. |
 
 ## قالب‌ها؛ ظاهر صفحات سایت
@@ -144,7 +148,9 @@
 
 | مسیر | کاربرد |
 |---|---|
-| resources/views/admin/login.blade.php | صفحه ورود مدیر. |
+| resources/views/admin/login.blade.php | صفحه ورود مدیر با رمز عبور. |
+| resources/views/admin/mfa-setup.blade.php | نمایش کلید محرمانه برای ثبت در برنامه احراز هویت و فعال‌سازی MFA. |
+| resources/views/admin/mfa-verify.blade.php | فرم ورود کد شش‌رقمی TOTP مدیر. |
 | resources/views/admin/dashboard.blade.php | داشبورد و خلاصه وضعیت فروشگاه. |
 | resources/views/admin/products/index.blade.php | فهرست و جست‌وجوی محصولات. |
 | resources/views/admin/products/form.blade.php | ساخت و ویرایش محصول، عکس‌ها و GLB. |
@@ -176,7 +182,7 @@
 
 | مسیر | کاربرد |
 |---|---|
-| tests/TestCase.php | کلاس پایه تست‌های برنامه. |
+| tests/TestCase.php | کلاس پایه تست‌ها و helper ورود مدیر با MFA شبیه‌سازی‌شده برای تست‌های پنل. |
 | tests/Feature/HomePageTest.php | تست صفحه اصلی و مسیرهای عمومی پایه. |
 | tests/Feature/CatalogManagementTest.php | تست مدیریت محصول، دسته‌بندی و فایل‌ها. |
 | tests/Feature/CustomerManagementTest.php | تست فهرست و جزئیات مشتریان. |
@@ -194,6 +200,7 @@
 | tests/Feature/SeoTechnicalTest.php | تست canonical، sitemap/robots، structured data و جلوگیری از XSS در JSON-LD. |
 | tests/Feature/SecurityHeadersTest.php | تست هدرهای امنیتی، CSP، HSTS و no-cache. |
 | tests/Feature/SecurityHardeningTest.php | تست محدودیت تلاش ورود مدیر و OTP و دسترسی مهمان. |
+| tests/Feature/AdminMfaTest.php | تست اجباری بودن MFA مدیر، بردار استاندارد TOTP، جلوگیری از بازاستفاده کد و حریم خصوصی پیگیری سفارش. |
 
 ## CI و نگهداری وابستگی‌ها
 
@@ -224,7 +231,8 @@
 - تغییر موجودی: app/Services/StockReservationService.php و app/Services/OrderFulfillmentService.php.
 - تغییر پیامک: app/Services/SmsService.php و config/services.php.
 - تغییر درگاه: app/Services/ZarinpalService.php و config/services.php.
-- تغییر ورود مشتری: app/Http/Controllers/CustomerAuthController.php و PhoneVerification.php.
-- تغییر دسترسی پنل: routes/web.php، EnsureAdmin.php و AdminAuthController.php.
+- تغییر ورود مشتری: app/Http/Controllers/CustomerAuthController.php و app/Models/PhoneVerification.php.
+- تغییر حریم خصوصی پیگیری سفارش: app/Http/Middleware/EnsureCustomer.php و app/Http/Controllers/OrderTrackingController.php.
+- تغییر دسترسی پنل و ورود دومرحله‌ای: routes/web.php، app/Http/Middleware/EnsureAdmin.php، app/Http/Controllers/AdminAuthController.php، app/Http/Controllers/AdminMfaController.php و app/Services/TotpService.php.
 - تغییر ساختار دیتابیس: فقط یک migration جدید در database/migrations بساز.
 - افزودن/اصلاح تست: فایل Feature مرتبط در tests/Feature.
