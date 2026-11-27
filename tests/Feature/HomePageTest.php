@@ -1512,4 +1512,39 @@ class HomePageTest extends TestCase
             ->assertSee(route('admin.orders.show', $order), false);
     }
 
+    public function test_product_page_hides_purchase_when_all_stock_is_reserved(): void
+    {
+        $product = Product::create([
+            'name' => 'محصول رزروشده',
+            'slug' => 'fully-reserved-product',
+            'price' => 180000,
+            'stock' => 3,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-PRODUCT-RESERVED-01',
+            'customer_name' => 'مشتری رزرو',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 180000,
+            'shipping_amount' => 0,
+            'total' => 180000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+        \\Illuminate\\Support\\Facades\\DB::table('stock_reservations')->insert([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 3,
+            'expires_at' => now()->addMinutes(20),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('در حال حاضر ناموجود یا رزروشده')
+            ->assertDontSee('افزودن به سبد خرید');
+    }
+
 }
