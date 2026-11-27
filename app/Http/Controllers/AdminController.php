@@ -95,6 +95,13 @@ class AdminController extends Controller {
     return $fulfillment->deductStock($locked);
    });
   } catch(\RuntimeException $e) {
+   DB::transaction(function()use($order,$reservations){
+    $locked=Order::whereKey($order->id)->lockForUpdate()->first();
+    if($locked&&$locked->payment_status==='paid'&&!$locked->stock_deducted_at){
+     $reservations->releaseForOrder($locked);
+     $locked->update(['status'=>'paid_stock_issue']);
+    }
+   });
    return back()->withErrors(['stock'=>$e->getMessage()]);
   }
   if(!$deducted)return back()->withErrors(['stock'=>'موجودی کافی نیست یا محصول حذف شده است؛ پس از اصلاح موجودی دوباره تلاش کنید.']);
