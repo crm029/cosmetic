@@ -1631,7 +1631,7 @@ class HomePageTest extends TestCase
             ]);
 
             $response = $this->actingAs($admin)->get(route('admin.orders.show', $order))->assertOk();
-            $response->assertDontSee(route('admin.orders.update', $order), false);
+            $response->assertDontSee('name="status"', false)->assertDontSee('ذخیره وضعیت');
 
             if ($index === 0) {
                 $response->assertSee('تا زمان رفع مشکل موجودی');
