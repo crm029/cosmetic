@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminMfaController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\ContactController;
@@ -33,8 +34,8 @@ Route::get('/faq',fn()=>view('pages.faq',['seoTitle'=>'پرسش‌های متد�
 Route::get('/contact',[ContactController::class,'index'])->name('contact.index');
 Route::post('/contact',[ContactController::class,'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/order/track',[OrderTrackingController::class,'index'])->name('orders.track');
-Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware('throttle:order-track')->name('orders.track.lookup');
-Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware('throttle:order-payment-retry')->name('orders.pay.retry');
+Route::post('/order/track',[OrderTrackingController::class,'lookup'])->middleware(['customer','throttle:order-track'])->name('orders.track.lookup');
+Route::post('/order/{order}/pay',[OrderTrackingController::class,'retryPayment'])->middleware(['customer','throttle:order-payment-retry'])->name('orders.pay.retry');
 Route::get('/login',fn()=>redirect()->route('admin.login'))->name('login');
 Route::get('/account/login',[CustomerAuthController::class,'show'])->name('customer.login');
 Route::post('/account/send-code',[CustomerAuthController::class,'sendCode'])->middleware('throttle:customer-otp-send')->name('customer.send-code');
@@ -42,10 +43,17 @@ Route::post('/account/verify',[CustomerAuthController::class,'verify'])->middlew
 Route::get('/account',[CustomerAuthController::class,'index'])->name('account.index');
 Route::middleware('auth')->group(function(){ Route::post('/account/logout',[CustomerAuthController::class,'logout'])->name('account.logout'); Route::post('/product/{product}/reviews',[ProductReviewController::class,'store'])->middleware('throttle:5,10')->name('products.reviews.store'); });
 Route::get('/admin/login',[AdminAuthController::class,'show'])->name('admin.login');
+Route::middleware('auth')->prefix('admin/security')->name('admin.mfa.')->group(function(){
+ Route::get('/setup',[AdminMfaController::class,'setup'])->name('setup');
+ Route::post('/setup',[AdminMfaController::class,'enable'])->middleware('throttle:5,1')->name('enable');
+ Route::get('/verify',[AdminMfaController::class,'verifyForm'])->name('verify');
+ Route::post('/verify',[AdminMfaController::class,'verifyCode'])->middleware('throttle:5,1')->name('verify.submit');
+});
+Route::post('/admin/logout',[AdminAuthController::class,'logout'])->middleware('auth')->name('admin.logout');
 Route::post('/admin/login',[AdminAuthController::class,'login'])->middleware('throttle:admin-login')->name('admin.login.submit');
 Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){
  Route::get('/',[AdminController::class,'dashboard'])->name('dashboard');
- Route::post('/logout',[AdminAuthController::class,'logout'])->name('logout');
+
  Route::get('/categories',[AdminController::class,'categories'])->name('categories');
  Route::get('/categories/create',[AdminController::class,'createCategory'])->name('categories.create');
  Route::post('/categories',[AdminController::class,'storeCategory'])->name('categories.store');
