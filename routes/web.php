@@ -19,7 +19,7 @@ Route::post('/cart/{product}',[CartController::class,'add'])->name('cart.add');
 Route::patch('/cart/{product}',[CartController::class,'update'])->name('cart.update');
 Route::delete('/cart/{product}',[CartController::class,'remove'])->name('cart.remove');
 Route::get('/checkout',[CheckoutController::class,'index'])->name('checkout.index');
-Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');
+Route::post('/checkout',[CheckoutController::class,'store'])->middleware('throttle:10,1')->name('checkout.store');\nRoute::post('/coupon/apply',[CouponController::class,'apply'])->middleware('throttle:10,1')->name('coupon.apply');\nRoute::delete('/coupon',[CouponController::class,'remove'])->name('coupon.remove');
 Route::get('/payment/callback',[PaymentController::class,'callback'])->name('payment.callback');
 Route::get('/about',fn()=>view('pages.about',['seoTitle'=>'درباره ما | '.StoreSetting::current()->store_name,'seoDescription'=>'با داستان و رویکرد فروشگاه محصولات زیبایی آشنا شوید.']))->name('about');
 Route::get('/privacy',fn()=>view('pages.privacy',['seoTitle'=>'حریم خصوصی | '.StoreSetting::current()->store_name,'seoDescription'=>'نحوه استفاده از اطلاعات مشتریان و سفارش‌ها.']))->name('privacy');
@@ -42,7 +42,7 @@ Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(func
  Route::get('/categories/{category}/edit',[AdminController::class,'editCategory'])->name('categories.edit');
  Route::put('/categories/{category}',[AdminController::class,'updateCategory'])->name('categories.update');
  Route::delete('/categories/{category}',[AdminController::class,'deleteCategory'])->name('categories.delete');
- Route::get('/settings',[AdminController::class,'settings'])->name('settings');
+ Route::get('/settings',[AdminController::class,'settings'])->name('settings');\n Route::get('/coupons',[AdminController::class,'coupons'])->name('coupons');\n Route::post('/coupons',[AdminController::class,'storeCoupon'])->name('coupons.store');\n Route::patch('/coupons/{coupon}/toggle',[AdminController::class,'toggleCoupon'])->name('coupons.toggle');
  Route::put('/settings',[AdminController::class,'updateSettings'])->name('settings.update');
  Route::get('/messages',[AdminController::class,'messages'])->name('messages');
  Route::patch('/messages/{message}/read',[AdminController::class,'markMessageRead'])->name('messages.read');
