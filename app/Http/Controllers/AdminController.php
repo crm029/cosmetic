@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\ContactMessage;
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Models\StockMovement;
@@ -256,6 +257,11 @@ class AdminController extends Controller {
    if($locked->payment_status==='refunded')return 'بازپرداخت این سفارش قبلاً ثبت شده است.';
    if($locked->payment_status!=='paid'||$locked->status!=='refund_required')return 'فقط سفارش‌های پرداخت‌شده و نیازمند بازپرداخت قابل ثبت هستند.';
    $locked->update(['payment_status'=>'refunded','refund_ref_id'=>$data['refund_ref_id'],'refund_note'=>$data['refund_note'],'refunded_at'=>now(),'status'=>'cancelled']);
+   OrderStatusHistory::create([
+    'order_id'=>$locked->id,'admin_user_id'=>auth()->id(),
+    'from_status'=>'refund_required','to_status'=>'cancelled','actor_type'=>'admin',
+    'note'=>'بازپرداخت با مرجع '.$data['refund_ref_id'].' ثبت شد.',
+   ]);
    return null;
   });
   if($error)return back()->withErrors(['refund'=>$error]);
@@ -276,7 +282,16 @@ class AdminController extends Controller {
     'delivered'=>['delivered'],
    ];
    if(!in_array($data['status'],$allowedTransitions[$locked->status]??[],true))return 'برای ثبت این وضعیت، ابتدا باید مرحله قبلی سفارش تکمیل شود.';
-   $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];if($data['status']==='cancelled'&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);$locked->update($changes);return null;
+   $previousStatus=$locked->status;
+   $changes=['status'=>$data['status']];if($data['status']==='shipped')$changes['shipped_at']=$locked->shipped_at??now();if($data['status']==='delivered')$changes['delivered_at']=$locked->delivered_at??now();if(!empty($data['shipping_carrier']))$changes['shipping_carrier']=$data['shipping_carrier'];if(!empty($data['tracking_code']))$changes['tracking_code']=$data['tracking_code'];if($data['status']==='cancelled'&&$locked->payment_status!=='paid')$reservations->releaseForOrder($locked);$locked->update($changes);
+   if($previousStatus!==$data['status']){
+    OrderStatusHistory::create([
+     'order_id'=>$locked->id,'admin_user_id'=>auth()->id(),
+     'from_status'=>$previousStatus,'to_status'=>$data['status'],
+     'actor_type'=>'admin','note'=>'وضعیت سفارش از پنل مدیریت تغییر کرد.',
+    ]);
+   }
+   return null;
   });
   if($error)return back()->withErrors(['status'=>$error]);
   if($data['status']==='shipped')$sms->sendShipmentUpdateOnce($order->fresh());
