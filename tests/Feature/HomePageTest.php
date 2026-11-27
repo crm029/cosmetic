@@ -1327,9 +1327,10 @@ class HomePageTest extends TestCase
             'payment_status' => 'refunded',
         ]);
 
-        $this->post(route('orders.pay.retry', $order), [
+        $customer = User::create(['name' => $order->customer_name, 'mobile' => $order->mobile, 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post(route('orders.pay.retry', $order), [
             'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
+            'mobile' => $customer->mobile,
         ])->assertSessionHasErrors('payment');
 
         $this->assertDatabaseHas('orders', [
@@ -1807,9 +1808,10 @@ class HomePageTest extends TestCase
 
         Http::fake();
 
-        $this->post(route('orders.pay.retry', $order), [
+        $customer = User::create(['name' => $order->customer_name, 'mobile' => $order->mobile, 'password' => 'a-secure-test-password', 'is_admin' => false]);
+        $this->actingAs($customer)->post(route('orders.pay.retry', $order), [
             'order_number' => $order->order_number,
-            'mobile' => $order->mobile,
+            'mobile' => $customer->mobile,
         ])->assertRedirect('https://sandbox.zarinpal.com/pg/StartPay/S0000000000000000000000000000999');
 
         $this->assertDatabaseHas('orders', [
