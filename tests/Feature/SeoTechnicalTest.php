@@ -72,4 +72,33 @@ class SeoTechnicalTest extends TestCase
             ->assertDontSee('Disallow: /checkout', false)
             ->assertSee('/sitemap.xml', false);
     }
+    public function test_category_page_exposes_a_product_item_list_and_preserves_pagination_parameters(): void
+    {
+        $category = Category::create([
+            'name' => 'مراقبت پوست',
+            'slug' => 'skin-care',
+            'description' => 'محصولات مراقبت پوست',
+            'is_active' => true,
+        ]);
+
+        for ($i = 1; $i <= 13; $i++) {
+            Product::create([
+                'category_id' => $category->id,
+                'name' => 'محصول دسته '.$i,
+                'slug' => 'category-product-'.$i,
+                'price' => 50000 + $i,
+                'stock' => 3,
+                'is_active' => true,
+            ]);
+        }
+
+        $this->get(route('categories.show', $category).'?page=2&campaign=spring')
+            ->assertOk()
+            ->assertSee('"@type":"CollectionPage"', false)
+            ->assertSee('"@type":"ItemList"', false)
+            ->assertSee('"numberOfItems":1', false)
+            ->assertSee('محصول دسته 13', false)
+            ->assertSee('page=2&amp;campaign=spring', false);
+    }
+
 }
