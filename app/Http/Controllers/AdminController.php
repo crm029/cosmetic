@@ -308,7 +308,7 @@ class AdminController extends Controller {
    if(in_array($data['status'],['processing','shipped','delivered'],true)&&($locked->payment_status!=='paid'||!$locked->stock_deducted_at))return 'تا پیش از تأیید پرداخت و کسر موجودی، امکان تغییر این وضعیت وجود ندارد.';
    $allowedTransitions=[
     'pending'=>['pending','processing','cancelled'],
-    'processing'=>['processing','shipped'],
+    'processing'=>$locked->shipping_method==='pickup'?['processing','delivered']:['processing','shipped'],
     'shipped'=>['shipped','delivered'],
     'delivered'=>['delivered'],
    ];
