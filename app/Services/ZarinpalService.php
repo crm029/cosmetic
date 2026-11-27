@@ -48,9 +48,18 @@ class ZarinpalService
 
         $order->update(['payment_authority' => $authority]);
 
+        return $this->startPayUrl($order->fresh());
+    }
+
+    public function startPayUrl(Order $order): string
+    {
+        if (!$order->payment_authority) {
+            throw new RuntimeException('برای این سفارش لینک پرداخت فعالی ثبت نشده است.');
+        }
+
         $startPay = rtrim((string) config('services.zarinpal.startpay_url', 'https://sandbox.zarinpal.com/pg/StartPay'), '/');
 
-        return $startPay.'/'.$authority;
+        return $startPay.'/'.$order->payment_authority;
     }
 
     /**
