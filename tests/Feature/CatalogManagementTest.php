@@ -75,11 +75,17 @@ class CatalogManagementTest extends TestCase
     {
         Storage::fake('public');
         $admin = $this->admin();
-        $json = json_encode(['asset' => ['version' => '2.0']]);
+        $json = json_encode([
+            'asset' => ['version' => '2.0'],
+            'buffers' => [['byteLength' => 4]],
+        ]);
         $json = str_pad($json, (int) (ceil(strlen($json) / 4) * 4), ' ');
         $chunkLength = strlen($json);
-        $totalLength = 20 + $chunkLength;
-        $glb = 'glTF' . pack('V', 2) . pack('V', $totalLength) . pack('V', $chunkLength) . 'JSON' . $json;
+        $binary = 'DATA';
+        $totalLength = 20 + $chunkLength + 8 + strlen($binary);
+        $glb = 'glTF' . pack('V', 2) . pack('V', $totalLength)
+            . pack('V', $chunkLength) . 'JSON' . $json
+            . pack('V', strlen($binary)) . "BIN\0" . $binary;
 
         $this->actingAs($admin)->post(route('admin.products.store'), [
             'name' => 'محصول با مدل سه‌بعدی',
