@@ -184,9 +184,10 @@ class AdminController extends Controller {
   ]);
  }
  public function markMessageRead(Request $request,ContactMessage $message) {
-  $data=$request->validate(['is_read'=>['required','boolean']]);
-  $message->update(['is_read'=>(bool)$data['is_read']]);
-  return back()->with('success',$data['is_read']?'پیام به‌عنوان خوانده‌شده ثبت شد.':'پیام به فهرست خوانده‌نشده‌ها برگشت.');
+  $data=$request->validate(['is_read'=>['sometimes','boolean']]);
+  $isRead=(bool)($data['is_read']??true);
+  $message->update(['is_read'=>$isRead]);
+  return back()->with('success',$isRead?'پیام به‌عنوان خوانده‌شده ثبت شد.':'پیام به فهرست خوانده‌نشده‌ها برگشت.');
  }
  public function orders(Request $request): View {
   $filters=$request->validate(['q'=>['nullable','string','max:100'],'status'=>['nullable','in:pending,processing,shipped,delivered,cancelled,paid_stock_issue,refund_required'],'payment_status'=>['nullable','in:unpaid,paid,failed,refunded']]);
