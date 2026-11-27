@@ -39,7 +39,7 @@ class OrderFulfillmentService {
     $actual=$active->map(fn($quantity)=>(int)$quantity)->sortKeys()->all();
     if($actual!==$expected){
      DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['released_at'=>now(),'updated_at'=>now()]);
-     $lockedOrder->update(['status'=>'paid_stock_issue']);
+     $this->changeStatus($lockedOrder, 'paid_stock_issue', 'رزروهای فعال سفارش با اقلام سفارش مطابقت ندارند.');
      return false;
     }
    }
@@ -55,7 +55,7 @@ class OrderFulfillmentService {
    foreach($requiredByProduct as $productId=>$quantity){
     $product=$products->get($productId);
     $freeStock=$product?(int)$product->stock-(int)($reservedElsewhere[$productId]??0):0;
-    if(!$product||$freeStock<$quantity){$lockedOrder->update(['status'=>'paid_stock_issue']);return false;}
+    if(!$product||$freeStock<$quantity){$this->changeStatus($lockedOrder, 'paid_stock_issue', 'موجودی آزاد یکی از اقلام سفارش کافی نیست.');return false;}
    }
    foreach($requiredByProduct as $productId=>$quantity){
     $product=$products->get($productId);$previous=(int)$product->stock;
