@@ -75,6 +75,6 @@ class CustomerManagementTest extends TestCase
             'is_admin' => false,
         ]);
 
-        $this->actingAs($user)->get(route('admin.customers'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.customers'))->assertRedirect(route('admin.login'));
     }
 }
