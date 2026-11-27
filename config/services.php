@@ -5,6 +5,7 @@ return [
   'startpay_url'=>env('ZARINPAL_STARTPAY_URL','https://sandbox.zarinpal.com/pg/StartPay'),
   'merchant_id'=>env('ZARINPAL_MERCHANT_ID')
  ],
+ 'inventory'=>['reservation_minutes'=>(int) env('STOCK_RESERVATION_MINUTES',30)],
  '0098sms'=>[
   'base_url'=>env('SMS_BASE_URL'),
   'username'=>env('SMS_USERNAME'),
