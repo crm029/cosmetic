@@ -21,7 +21,7 @@ class ProductController extends Controller {
    ->when(!empty($filters['q']),function($q)use($filters){$term='%'.$filters['q'].'%';$q->where(function($search)use($term){$search->where('name','like',$term)->orWhere('short_description','like',$term)->orWhere('sku','like',$term);});})
    ->when(isset($filters['min_price']),fn($q)=>$q->where('price','>=',$filters['min_price']))
    ->when(isset($filters['max_price']),fn($q)=>$q->where('price','<=',$filters['max_price']))
-   ->when(!empty($filters['in_stock']),fn($q)=>$q->where('stock','>',0))
+   ->when(!empty($filters['in_stock']),fn($q)=>$q->whereRaw('products.stock > (SELECT COALESCE(SUM(stock_reservations.quantity),0) FROM stock_reservations WHERE stock_reservations.product_id = products.id AND stock_reservations.released_at IS NULL AND stock_reservations.consumed_at IS NULL AND stock_reservations.expires_at > ?)',[now()]))
    ->when(($filters['sort']??'latest')==='price_asc',fn($q)=>$q->orderBy('price'))
    ->when(($filters['sort']??'latest')==='price_desc',fn($q)=>$q->orderByDesc('price'))
    ->when(($filters['sort']??'latest')==='latest',fn($q)=>$q->latest())
