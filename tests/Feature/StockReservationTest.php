@@ -166,4 +166,45 @@ class StockReservationTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id]);
     }
 
+
+    public function test_admin_can_reconcile_paid_order_after_expired_reservation_when_stock_is_available(): void
+    {
+        $admin = User::create(['name' => 'مدیر تطبیق موجودی', 'mobile' => '09123456782', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'محصول قابل تامین', 'slug' => 'reconcile-expired-stock', 'price' => 100000, 'stock' => 3, 'is_active' => true]);
+        $order = $this->makeOrder([['product' => $product, 'quantity' => 2]], 'CS-RECONCILE-01');
+        app(StockReservationService::class)->reserveForOrder($order);
+        DB::table('stock_reservations')->where('order_id', $order->id)->update(['expires_at' => now()->subMinute()]);
+        $order->update(['payment_status' => 'paid', 'status' => 'paid_stock_issue']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.reconcile', $order))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 1]);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'processing']);
+        $this->assertNotNull($order->fresh()->stock_deducted_at);
+        $this->assertTrue(DB::table('stock_reservations')->where('order_id', $order->id)->whereNotNull('released_at')->exists());
+        $this->assertTrue(DB::table('stock_reservations')->where('order_id', $order->id)->whereNotNull('consumed_at')->exists());
+        $this->assertDatabaseCount('stock_movements', 1);
+    }
+
+    public function test_cancelling_unpaid_order_releases_its_stock_reservation(): void
+    {
+        $admin = User::create(['name' => 'مدیر لغو سفارش', 'mobile' => '09123456783', 'password' => 'a-secure-test-password', 'is_admin' => true]);
+        $product = Product::create(['name' => 'محصول سفارش لغوشده', 'slug' => 'cancel-order-reservation', 'price' => 80000, 'stock' => 4, 'is_active' => true]);
+        $order = $this->makeOrder([['product' => $product, 'quantity' => 3]], 'CS-CANCEL-RESERVE-01');
+        app(StockReservationService::class)->reserveForOrder($order);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.orders.update', $order), ['status' => 'cancelled'])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'cancelled']);
+        $this->assertTrue(DB::table('stock_reservations')->where('order_id', $order->id)->whereNotNull('released_at')->exists());
+        $this->assertFalse(DB::table('stock_reservations')->where('order_id', $order->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at', '>', now())->exists());
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 4]);
+    }
+
 }
