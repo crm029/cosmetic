@@ -44,7 +44,7 @@ class AdminContactMessagesTest extends TestCase
             'message' => 'یک پیشنهاد برای فروشگاه دارم.',
         ]);
 
-        $this->actingAs($admin)->get(route('admin.messages', ['q' => 'پیگیری سفارش']))
+        $this->actingAsAdmin($admin)->get(route('admin.messages', ['q' => 'پیگیری سفارش']))
             ->assertOk()->assertSee($match->subject)->assertDontSee($other->name);
     }
 
@@ -54,10 +54,10 @@ class AdminContactMessagesTest extends TestCase
         $unread = $this->message();
         $read = $this->message(['name' => 'مشتری خوانده‌شده', 'is_read' => true]);
 
-        $this->actingAs($admin)->get(route('admin.messages', ['status' => 'unread']))
+        $this->actingAsAdmin($admin)->get(route('admin.messages', ['status' => 'unread']))
             ->assertOk()->assertSee($unread->name)->assertDontSee($read->name);
 
-        $this->actingAs($admin)->get(route('admin.messages', ['status' => 'read']))
+        $this->actingAsAdmin($admin)->get(route('admin.messages', ['status' => 'read']))
             ->assertOk()->assertSee($read->name)->assertDontSee($unread->name);
     }
 
@@ -66,7 +66,7 @@ class AdminContactMessagesTest extends TestCase
         $admin = $this->admin();
         $message = $this->message();
 
-        $this->actingAs($admin)->patch(route('admin.messages.read', $message), ['is_read' => 1])
+        $this->actingAsAdmin($admin)->patch(route('admin.messages.read', $message), ['is_read' => 1])
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertTrue($message->fresh()->is_read);
 
