@@ -12,17 +12,21 @@ class OrderFulfillmentService {
    if($lockedOrder->payment_status!=='paid'||$lockedOrder->status==='refund_required')return false;
    if($lockedOrder->status==='cancelled'){$lockedOrder->update(['status'=>'refund_required']);return false;}
    $requiredByProduct=$lockedOrder->items()->get()->groupBy('product_id')->map(fn($items)=>(int)$items->sum('quantity'));
+   if($requiredByProduct->isEmpty()){
+    $lockedOrder->update(['status'=>'paid_stock_issue']);
+    return false;
+   }
    $products=Product::whereIn('id',$requiredByProduct->keys())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
    $reservations=DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->get();
    if($reservations->isNotEmpty()){
     $activeRows=DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->where('expires_at','>',now())->lockForUpdate()->get();
     $active=$activeRows->groupBy('product_id')->map(fn($rows)=>(int)$rows->sum('quantity'));
-    foreach($requiredByProduct as $productId=>$quantity){
-     if((int)($active[$productId]??0)!==$quantity){
-      DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['released_at'=>now(),'updated_at'=>now()]);
-      $lockedOrder->update(['status'=>'paid_stock_issue']);
-      return false;
-     }
+    $expected=$requiredByProduct->map(fn($quantity)=>(int)$quantity)->sortKeys()->all();
+    $actual=$active->map(fn($quantity)=>(int)$quantity)->sortKeys()->all();
+    if($actual!==$expected){
+     DB::table('stock_reservations')->where('order_id',$lockedOrder->id)->whereNull('released_at')->whereNull('consumed_at')->update(['released_at'=>now(),'updated_at'=>now()]);
+     $lockedOrder->update(['status'=>'paid_stock_issue']);
+     return false;
     }
    }
    $reservedElsewhere=[];
