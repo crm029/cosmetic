@@ -103,17 +103,39 @@ class AdminController extends Controller {
  public function categories(): View { return view('admin.categories.index',['categories'=>Category::orderBy('sort_order')->paginate(30)]); }
  public function createCategory(): View { return view('admin.categories.form',['category'=>new Category()]); }
  public function storeCategory(Request $request) {
-  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/','unique:categories,slug'],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
-  if($request->hasFile('image'))$data['image']=$request->file('image')->store('categories','public');
-  $data['is_active']=$request->boolean('is_active');Category::create($data);return redirect()->route('admin.categories')->with('success','دسته‌بندی ثبت شد.');
+  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/','unique:categories,slug'],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0','max:4294967295'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
+  $imagePath=null;
+  try {
+   if($request->hasFile('image')){$imagePath=$request->file('image')->store('categories','public');$data['image']=$imagePath;}
+   $data['is_active']=$request->boolean('is_active');
+   Category::create($data);
+  } catch(\\Throwable $e) {
+   if($imagePath)Storage::disk('public')->delete($imagePath);
+   throw $e;
+  }
+  return redirect()->route('admin.categories')->with('success','دسته‌بندی ثبت شد.');
  }
  public function editCategory(Category $category): View { return view('admin.categories.form',compact('category')); }
  public function updateCategory(Request $request,Category $category) {
-  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/',Rule::unique('categories','slug')->ignore($category->id)],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
-  if($request->hasFile('image')){if($category->image)Storage::disk('public')->delete($category->image);$data['image']=$request->file('image')->store('categories','public');}
-  $data['is_active']=$request->boolean('is_active');$category->update($data);return redirect()->route('admin.categories')->with('success','دسته‌بندی ویرایش شد.');
+  $data=$request->validate(['name'=>['required','string','max:150'],'slug'=>['required','string','max:150','regex:/^[a-z0-9-]+$/',Rule::unique('categories','slug')->ignore($category->id)],'description'=>['nullable','string'],'seo_title'=>['nullable','string','max:190'],'seo_description'=>['nullable','string','max:300'],'sort_order'=>['nullable','integer','min:0','max:4294967295'],'image'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:5120'],'is_active'=>['nullable','boolean']]);
+  $newImage=null;
+  try {
+   if($request->hasFile('image')){$newImage=$request->file('image')->store('categories','public');$data['image']=$newImage;}
+   $data['is_active']=$request->boolean('is_active');
+   $category->update($data);
+  } catch(\\Throwable $e) {
+   if($newImage)Storage::disk('public')->delete($newImage);
+   throw $e;
+  }
+  if($newImage&&$category->getOriginal('image')&&$category->getOriginal('image')!==$newImage)Storage::disk('public')->delete($category->getOriginal('image'));
+  return redirect()->route('admin.categories')->with('success','دسته‌بندی ویرایش شد.');
  }
- public function deleteCategory(Category $category) { if($category->image)Storage::disk('public')->delete($category->image);$category->delete();return back()->with('success','دسته‌بندی حذف شد.'); }
+ public function deleteCategory(Category $category) {
+  $image=$category->image;
+  DB::transaction(function()use($category){Category::whereKey($category->id)->lockForUpdate()->firstOrFail()->delete();});
+  if($image)Storage::disk('public')->delete($image);
+  return back()->with('success','دسته‌بندی حذف شد.');
+ }
  public function settings(): View { return view('admin.settings', ['settings'=>StoreSetting::current()]); }
  public function updateSettings(Request $request) {
   $data=$request->validate(['store_name'=>['required','string','max:150'],'tagline'=>['nullable','string','max:255'],'shipping_fee_toman'=>['required','integer','min:0','max:100000000'],'free_shipping_threshold_toman'=>['required','integer','min:0','max:100000000'],'support_mobile'=>['nullable','regex:/^09[0-9]{9}$/'],'support_email'=>['nullable','email','max:190'],'address'=>['nullable','string','max:1500'],'ink_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'accent_color'=>['required','regex:/^#[0-9A-Fa-f]{6}$/'],'logo'=>['nullable','image','mimes:jpg,jpeg,png,webp,avif','max:2048']]);
