@@ -30,7 +30,7 @@ class ProductController extends Controller {
  }
  public function category(Category $category): View {
   abort_unless($category->is_active,404);
-  $products=$category->products()->where('is_active',true)->latest()->paginate(12);
+  $products=$category->products()->where('is_active',true)->latest()->paginate(12)->withQueryString();
   return view('shop.category',['category'=>$category,'products'=>$products,'seoTitle'=>$category->seo_title ?: $category->name.' | '.config('app.name'),'seoDescription'=>$category->seo_description ?: ($category->description ?: 'مشاهده محصولات '.$category->name)]);
  }
  public function show(Product $product): View {
