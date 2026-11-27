@@ -30,6 +30,10 @@ class AppServiceProvider extends ServiceProvider {
    Limit::perMinute(20)->by('order-track-ip|'.$request->ip()),
    Limit::perMinute(5)->by('order-track-mobile|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
   ]);
+  RateLimiter::for('admin-mfa',fn(Request $request)=>[
+   Limit::perMinute(5)->by('admin-mfa-user|'.($request->user()?->id??'guest')),
+   Limit::perMinute(20)->by('admin-mfa-ip|'.$request->ip()),
+  ]);
   RateLimiter::for('order-payment-retry',fn(Request $request)=>[
    Limit::perMinutes(10,10)->by('order-pay-ip|'.$request->ip()),
    Limit::perMinutes(10,3)->by('order-pay-mobile|'.preg_replace('/\\D+/','',(string)$request->input('mobile'))),
