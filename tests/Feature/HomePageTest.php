@@ -1547,4 +1547,46 @@ class HomePageTest extends TestCase
             ->assertDontSee('افزودن به سبد خرید');
     }
 
+    public function test_in_stock_filter_excludes_products_fully_reserved_for_other_orders(): void
+    {
+        $available = Product::create([
+            'name' => 'محصول دارای موجودی آزاد',
+            'slug' => 'available-stock-filter',
+            'price' => 90000,
+            'stock' => 4,
+            'is_active' => true,
+        ]);
+        $reserved = Product::create([
+            'name' => 'محصول کاملاً رزروشده',
+            'slug' => 'reserved-stock-filter',
+            'price' => 110000,
+            'stock' => 2,
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'order_number' => 'CS-STOCK-FILTER-01',
+            'customer_name' => 'مشتری فیلتر موجودی',
+            'mobile' => '09123456789',
+            'shipping_address' => 'تهران، نشانی تست',
+            'subtotal' => 110000,
+            'shipping_amount' => 0,
+            'total' => 110000,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+        \\Illuminate\\Support\\Facades\\DB::table('stock_reservations')->insert([
+            'order_id' => $order->id,
+            'product_id' => $reserved->id,
+            'quantity' => 2,
+            'expires_at' => now()->addMinutes(20),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('shop', ['in_stock' => 1]))
+            ->assertOk()
+            ->assertSee($available->name)
+            ->assertDontSee($reserved->name);
+    }
+
 }
