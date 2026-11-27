@@ -9,12 +9,15 @@
     <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta name="theme-color" content="#f4eee8">
     <meta property="og:type" content="{{ isset($product) ? 'product' : 'website' }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:title" content="{{ $seoTitle ?? $storeSettings->store_name }}">
     <meta property="og:description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی.' }}">
     @if($socialImage)
         <meta property="og:image" content="{{ $socialImage }}">
     @endif
     <meta name="twitter:card" content="{{ $socialImage ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:title" content="{{ $seoTitle ?? $storeSettings->store_name }}">
+    <meta name="twitter:description" content="{{ $seoDescription ?? 'فروشگاه تخصصی محصولات زیبایی.' }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
